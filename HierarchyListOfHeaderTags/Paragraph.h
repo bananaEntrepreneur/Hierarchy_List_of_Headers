@@ -14,6 +14,7 @@ public:
 
     QString getText();
     Paragraph* getParent();
+    int getCountOfChilds();
     QList<Paragraph*> getChildHierarchy();
     int getLevel();
 

@@ -16,8 +16,7 @@ int getHeaderLevel(const QDomElement& element) {
 }
 
 
-Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
-{
+Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel) {
     int previousLevel = previous->getLevel();
 
     Paragraph* root = previous;

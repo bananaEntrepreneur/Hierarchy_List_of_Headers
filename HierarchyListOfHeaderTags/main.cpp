@@ -24,8 +24,11 @@ int main(int argc, char *argv[])
 
     QFile outputFile(argv[2]);
 
-    if (!outputFile.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
+    if (!outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
+    }
+
+    outputFile.close();
 
     return a.exec();
 }

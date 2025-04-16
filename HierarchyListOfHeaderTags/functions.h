@@ -14,7 +14,6 @@ int getHeaderLevel(const QDomElement& element);
 */
 Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel);
 
-
 /*! Рекурсивная функция построения иерархии заголовочных тегов
 * \param [in] domTreeRoot - корень DOM дерева  
 * \param [in,out] root - корень иерархии заголовочных тегов

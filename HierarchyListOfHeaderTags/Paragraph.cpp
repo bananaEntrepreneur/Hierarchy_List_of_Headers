@@ -11,6 +11,7 @@ Paragraph::Paragraph(QString iText, Paragraph* iParent, int iLevel) {
 	text = iText;
 	parent = iParent;
 	level = iLevel;
+	QList<Paragraph*> childHierarchy;
 }
 
 Paragraph::Paragraph(QString iText, Paragraph* iParent, QList<Paragraph*> iChildHierarchy, int iLevel) {
@@ -48,10 +49,19 @@ Paragraph* Paragraph::getParent() {
 	return this->parent;
 }
 
+int Paragraph::getCountOfChilds() {
+	return this->getChildHierarchy()->count();
+}
+
 QList<Paragraph*> Paragraph::getChildHierarchy() {
 	return this->childHierarchy;
 }
 
 int Paragraph::getLevel() {
 	return this->level;
+}
+
+// Метод, возвращающий строковое представление иерархии заголовочных тегов
+QString Paragraph::toString(QString separator) {
+	return;
 }
