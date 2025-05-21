@@ -12,7 +12,7 @@ int getHeaderLevel(const QDomElement& element) {
     if (tagName == "section" || tagName == "article") {
         return 1;
     }
-    return 0; // Не является тегом заголовка H1-H6
+    return 0; // РќРµ СЏРІР»СЏРµС‚СЃСЏ С‚РµРіРѕРј Р·Р°РіРѕР»РѕРІРєР° H1-H6
 }
 
 
@@ -29,11 +29,11 @@ Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
         return root;
     }
     else if (currentLevel == previousLevel) {
-        // Тот же уровень: родитель тот же, что и у предыдущего
+        // РўРѕС‚ Р¶Рµ СѓСЂРѕРІРµРЅСЊ: СЂРѕРґРёС‚РµР»СЊ С‚РѕС‚ Р¶Рµ, С‡С‚Рѕ Рё Сѓ РїСЂРµРґС‹РґСѓС‰РµРіРѕ
         return previous->getParent();
     }
     else if (currentLevel > previousLevel) {
-        // Уровень больше: текущий становится дочерним предыдущего
+        // РЈСЂРѕРІРµРЅСЊ Р±РѕР»СЊС€Рµ: С‚РµРєСѓС‰РёР№ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РґРѕС‡РµСЂРЅРёРј РїСЂРµРґС‹РґСѓС‰РµРіРѕ
         return previous;
     }
     else { // currentLevel < previousLevel
@@ -60,7 +60,7 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
 
             Paragraph* newParagraph = nullptr;
 
-            if (headerLevel > 0) { // Это заголовочный тег
+            if (headerLevel > 0) { // Р­С‚Рѕ Р·Р°РіРѕР»РѕРІРѕС‡РЅС‹Р№ С‚РµРі
                 Paragraph* newParent = findParentForParagraph(root, headerLevel);
 
                 QString headerText = childElement.text();
@@ -76,7 +76,7 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
             createHierarchyListOfHeaderTags(childElement, lastAddedParagraph, errors);
             }
         }
-        // Переходим к следующему элементу в DOM
+        // РџРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµРјСѓ СЌР»РµРјРµРЅС‚Сѓ РІ DOM
         childNode = childNode.nextSibling();
     }
 }

@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     int errorLine, errorColumn;
 
     domTree.setContent(&inputFile, &errorMesaage, &errorLine, &errorColumn);
-    
+
     inputFile.close();
 
     QDomElement bodyElement = domTree.firstChildElement("body");

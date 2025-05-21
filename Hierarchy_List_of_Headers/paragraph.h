@@ -1,9 +1,11 @@
-#pragma once
+#ifndef PARAGRAPH_H
+#define PARAGRAPH_H
+
 #include "main.h"
 
 class Paragraph {
 public:
-	Paragraph();
+    Paragraph();
     Paragraph(QString iText, Paragraph* iParent, int iLevel);
     Paragraph(QString iText, Paragraph* iParent, QList<Paragraph*> iChildHierarchy, int iLevel);
 
@@ -20,10 +22,12 @@ public:
     //QString toString(QString separator);
 
 private:
-	QString text;
+    QString text;
     int level;
-	Paragraph* parent;
-	QList<Paragraph*> childHierarchy;
+    Paragraph* parent;
+    QList<Paragraph*> childHierarchy;
 
     //QString getString(QString separator, QVector<int> numeration);
 };
+
+#endif // PARAGRAPH_H
