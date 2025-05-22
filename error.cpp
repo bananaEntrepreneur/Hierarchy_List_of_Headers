@@ -47,5 +47,3 @@ QString Error::getErrorInputPath() {
 QString Error::getErrorOutputPath() {
     return this->errorOutputPath;
 }
-
-

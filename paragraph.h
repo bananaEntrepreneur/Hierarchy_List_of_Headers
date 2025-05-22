@@ -19,7 +19,7 @@ public:
     QList<Paragraph*>* getChildHierarchy();
     int getLevel();
 
-    //QString toString(QString separator);
+    QString toString(QString separator);
 
 private:
     QString text;
@@ -27,7 +27,7 @@ private:
     Paragraph* parent;
     QList<Paragraph*> childHierarchy;
 
-    //QString getString(QString separator, QVector<int> numeration);
+    QString getString(QString separator, QVector<int> numeration);
 };
 
 #endif // PARAGRAPH_H

@@ -49,6 +49,7 @@ Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
 
 void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error>& errors) {
     QDomNode childNode = domTreeRoot.firstChild();
+
     while (!childNode.isNull()) {
         Paragraph* lastAddedParagraph = nullptr;
 
@@ -56,6 +57,7 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
 
             QDomElement childElement = childNode.toElement();
 
+            // Ошибка вложенности section ИЛИ article
             if (childElement.text() == "section" || childElement.text() == "article") {
 
                 Error nestingError;
@@ -70,10 +72,21 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
             Paragraph* newParagraph = nullptr;
 
             if (headerLevel > 0) { // Это заголовочный тег
+
+                // Ошибка: пустой заголовок
+                if (childElement.text().isEmpty()) {
+                    Error emptyHeader;
+                    emptyHeader.setType(ErrorType::tagError);
+                    emptyHeader.setErrorTagName(childElement.text());
+                    emptyHeader.setErrorAttrName("empty");
+                    errors.insert(emptyHeader);
+                    childNode = childNode.nextSibling();
+                    continue;
+                }
+
                 Paragraph* newParent = findParentForParagraph(root, headerLevel);
 
-                QString headerText = childElement.text();
-                newParagraph = new Paragraph(headerText.trimmed(), newParent, headerLevel);
+                newParagraph = new Paragraph(childElement.text().trimmed(), newParent, headerLevel);
 
                 newParent->appendChild(newParagraph);
 
@@ -81,11 +94,17 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
 
                 createHierarchyListOfHeaderTags(childElement, newParagraph, errors);
             }
-            else {
-            createHierarchyListOfHeaderTags(childElement, lastAddedParagraph, errors);
-            }
+            else
+                createHierarchyListOfHeaderTags(childElement, lastAddedParagraph, errors);
         }
         // Переходим к следующему элементу в DOM
         childNode = childNode.nextSibling();
+    }
+
+    // Ошибка: нет ни одного заголовка
+    if (childNode.isNull()) {
+        Error noHeader;
+        noHeader.setType(ErrorType::noHeaderTagsError);
+        errors.insert(noHeader);
     }
 }

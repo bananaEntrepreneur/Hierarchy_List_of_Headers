@@ -1,10 +1,10 @@
 #include "paragraph.h"
 
 Paragraph::Paragraph() {
-    QString text = " ";
-    Paragraph* parent = nullptr;
+    text = "root";
+    parent = nullptr;
     QList<Paragraph*> childHierarchy;
-    int level = 0;
+    level = 0;
 }
 
 Paragraph::Paragraph(QString iText, Paragraph* iParent, int iLevel) {
@@ -55,4 +55,12 @@ QList<Paragraph*>* Paragraph::getChildHierarchy() {
 
 int Paragraph::getLevel() {
     return this->level;
+}
+
+QString Paragraph::toString(QString separator) {
+
+}
+
+QString Paragraph::getString(QString separator, QVector<int> numeration) {
+
 }
