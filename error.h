@@ -8,7 +8,18 @@ enum ErrorType { noError, tagError, tagAttributeError, fileError, htmlStructureE
 class Error {
 public:
     Error();
-    ~Error();
+
+    void setType(ErrorType value);
+    void setErrorTagName(QString value);
+    void setErrorAttrName(QString value);
+    void setErrorInputPath(QString value);
+    void setErrorOutputPath(QString value);
+
+    ErrorType getErrorType();
+    QString getErrorTagName();
+    QString getErrorAttrName();
+    QString getErrorInputPath();
+    QString getErrorOutputPath();
 
 private:
     ErrorType type;

@@ -8,4 +8,6 @@ TEMPLATE = app
 
 SOURCES += \
     correct_tst_createHierarchy.cpp \
-    tst_findParentForParagraph.cpp
+    incorrect_tst_createHierarchy.cpp \
+    tst_findParentForParagraph.cpp \
+    tst_getString.cpp

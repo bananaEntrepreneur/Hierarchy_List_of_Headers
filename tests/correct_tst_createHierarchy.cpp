@@ -3,8 +3,7 @@
 
 #include "../main.h"
 
-class correct_tst_createHierarchy : public QObject
-{
+class correct_tst_createHierarchy : public QObject {
     Q_OBJECT
 
 public:
@@ -18,28 +17,23 @@ private slots:
     void basicTest();
 };
 
-correct_tst_createHierarchy::correct_tst_createHierarchy()
-{
+correct_tst_createHierarchy::correct_tst_createHierarchy() {
 
 }
 
-correct_tst_createHierarchy::~correct_tst_createHierarchy()
-{
+correct_tst_createHierarchy::~correct_tst_createHierarchy() {
 
 }
 
-void correct_tst_createHierarchy::initTestCase()
-{
+void correct_tst_createHierarchy::initTestCase() {
 
 }
 
-void correct_tst_createHierarchy::cleanupTestCase()
-{
+void correct_tst_createHierarchy::cleanupTestCase() {
 
 }
 
-void correct_tst_createHierarchy::basicTest()
-{
+void correct_tst_createHierarchy::basicTest() {
     QString html =
         "<html>"
         "<body>"

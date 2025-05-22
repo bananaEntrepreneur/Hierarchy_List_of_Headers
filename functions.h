@@ -21,6 +21,6 @@ Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel);
 * \param [in] domTreeRoot - корень DOM дерева
 * \param [in,out] root - корень иерархии заголовочных тегов
 */
-void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error> errors);
+void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error>& errors);
 
 #endif // FUNCTIONS_H

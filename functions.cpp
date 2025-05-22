@@ -47,7 +47,7 @@ Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
 }
 
 
-void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error> errors) {
+void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error>& errors) {
     QDomNode childNode = domTreeRoot.firstChild();
     while (!childNode.isNull()) {
         Paragraph* lastAddedParagraph = nullptr;
@@ -55,6 +55,15 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, 
         if (childNode.isElement()) {
 
             QDomElement childElement = childNode.toElement();
+
+            if (childElement.text() == "section" || childElement.text() == "article") {
+
+                Error nestingError;
+                nestingError.setType((childElement.text() == "section") ? ErrorType::sectionNestingError : ErrorType::articleNestingError);
+                nestingError.setErrorTagName(childElement.text());
+                errors.insert(nestingError);
+                childNode = childNode.nextSibling();
+            }
 
             int headerLevel = getHeaderLevel(childElement);
 

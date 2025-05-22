@@ -3,8 +3,7 @@
 
 #include "../main.h"
 
-class tst_findParentTest : public QObject
-{
+class tst_findParentTest : public QObject {
     Q_OBJECT
 
 public:
@@ -21,28 +20,23 @@ private slots:
     void currentLVLlessThenPreviousANDmanySameParagraphs();
 };
 
-tst_findParentTest::tst_findParentTest()
-{
+tst_findParentTest::tst_findParentTest() {
 
 }
 
-tst_findParentTest::~tst_findParentTest()
-{
+tst_findParentTest::~tst_findParentTest() {
 
 }
 
-void tst_findParentTest::initTestCase()
-{
+void tst_findParentTest::initTestCase() {
 
 }
 
-void tst_findParentTest::cleanupTestCase()
-{
+void tst_findParentTest::cleanupTestCase() {
 
 }
 
-void tst_findParentTest::currentLVLbiggerThenPrevious()
-{
+void tst_findParentTest::currentLVLbiggerThenPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -54,8 +48,7 @@ void tst_findParentTest::currentLVLbiggerThenPrevious()
     QCOMPARE(result, &B);
 }
 
-void tst_findParentTest::currentLVLequalPrevious()
-{
+void tst_findParentTest::currentLVLequalPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -67,8 +60,7 @@ void tst_findParentTest::currentLVLequalPrevious()
     QCOMPARE(result, &A);
 }
 
-void tst_findParentTest::currentLVLlessThenPrevious()
-{
+void tst_findParentTest::currentLVLlessThenPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -80,8 +72,7 @@ void tst_findParentTest::currentLVLlessThenPrevious()
     QCOMPARE(result, root);
 }
 
-void tst_findParentTest::currentLVLlessThenPreviousANDmanySameParagraphs()
-{
+void tst_findParentTest::currentLVLlessThenPreviousANDmanySameParagraphs() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
