@@ -55,41 +55,52 @@ void correct_tst_createHierarchy::basicTest()
 
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
-    QDomElement rootElement = doc.documentElement();
+    QDomElement rootDocElement = doc.documentElement();
 
     Paragraph root;
     QSet<Error> errors;
 
-    createHierarchyListOfHeaderTags(rootElement, &root, errors);
+    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
 
-    // Проверка корня
-    const auto& topHeaders = root.getChild();
-    QCOMPARE(topHeaders.size(), 1);
-    QCOMPARE(topHeaders[0]->getText(), QString("Lorem ispsum")); // <h1>
+    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
+    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
+    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
+    QVERIFY(root.getChildHierarchy()->isEmpty());
 
-    const auto& h1Children = topHeaders[0]->getChildren();
-    QCOMPARE(h1Children.size(), 3);
+    QList<Paragraph*>* LoremIpsumChildHierarchy = LoremIpsumHeader->getChildHierarchy();
 
-    QCOMPARE(h1Children[0]->getText(), QString("Dolor sit amet"));          // <h2>
-    QCOMPARE(h1Children[1]->getText(), QString("Consectetur adipiscing elit")); // <h2>
-    QCOMPARE(h1Children[2]->getText(), QString("Ut labore et dolore"));     // <h2>
+    Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
+    QCOMPARE(DolorSitHeader->getLevel(), 2);
+    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
 
-    const auto& h2_1 = h1Children[1]->getChildren(); // <h3> под "Consectetur..."
-    QCOMPARE(h2_1.size(), 1);
-    QCOMPARE(h2_1[0]->getText(), QString("Tempor incididunt")); // <h3>
+    Paragraph* Consectetur = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
+    QCOMPARE(Consectetur->getLevel(), 2);
+    QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
 
-    const auto& h2_2 = h1Children[2]->getChildren(); // <h3> под "Ut labore..."
-    QCOMPARE(h2_2.size(), 1);
-    QCOMPARE(h2_2[0]->getText(), QString("Et dolore magna")); // <h3>
+    Paragraph* Tempor = Consectetur->getChildHierarchy()->takeFirst(); // <h3>Tempor incididunt</h3>
+    QCOMPARE(Tempor->getLevel(), 3);
+    QCOMPARE(Tempor->getText(), "Tempor incididunt");
+    QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
 
-    const auto& h3_2 = h2_2[0]->getChildren(); // <h4> под "Et dolore magna"
-    QCOMPARE(h3_2.size(), 1);
-    QCOMPARE(h3_2[0]->getText(), QString("Ut enim ad minim")); // <h4>
+    Paragraph* Utlabore = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut labore et dolore</h2>
+    QCOMPARE(Utlabore->getLevel(), 2);
+    QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
+    QVERIFY(LoremIpsumChildHierarchy->isEmpty());
+
+    Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h3>Et dolore magna</h3>
+    QCOMPARE(Etdolore->getLevel(), 3);
+    QCOMPARE(Etdolore->getText(), "Et dolore magna");
+    QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
+
+    Paragraph* Utenim = Etdolore->getChildHierarchy()->takeFirst(); // <h4>Ut enim ad minim</h4>
+    QCOMPARE(Utenim->getLevel(), 4);
+    QCOMPARE(Utenim->getText(), "Ut enim ad minim");
+    QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
+    QVERIFY(Utenim->getChildHierarchy()->isEmpty());
 
     QVERIFY(errors.isEmpty());
 }
 
-
 QTEST_MAIN(correct_tst_createHierarchy)
 
-//#include "tst_findParentForParagraph.moc"
+//#include "correct_tst_createHierarchy.moc"

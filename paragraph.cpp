@@ -49,8 +49,8 @@ Paragraph* Paragraph::getParent() {
     return this->parent;
 }
 
-QList<Paragraph*> Paragraph::getChildHierarchy() {
-    return this->childHierarchy;
+QList<Paragraph*>* Paragraph::getChildHierarchy() {
+    return &this->childHierarchy;
 }
 
 int Paragraph::getLevel() {

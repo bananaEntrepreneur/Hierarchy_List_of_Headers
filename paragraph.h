@@ -16,7 +16,7 @@ public:
 
     QString getText();
     Paragraph* getParent();
-    QList<Paragraph*> getChildHierarchy();
+    QList<Paragraph*>* getChildHierarchy();
     int getLevel();
 
     //QString toString(QString separator);

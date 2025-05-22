@@ -7,6 +7,8 @@ enum ErrorType { noError, tagError, tagAttributeError, fileError, htmlStructureE
 
 class Error {
 public:
+    Error();
+    ~Error();
 
 private:
     ErrorType type;
