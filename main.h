@@ -3,7 +3,7 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtXml/QDomDocument>
-#include <qset.h>
+#include <QSet>
 #include <QIODevice>
 #include <QFile>
 

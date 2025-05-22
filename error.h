@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-enum ErrorType { noError, tagError, tagAttributeError, fileError, htmlStructureError };
+enum ErrorType { noError, tagError, tagAttributeError, fileError, htmlStructureError, headerTagsHierarchyError, sectionNestingError , articleNestingError, tooManyTagsError, noTagError, noHeaderTagsError };
 
 class Error {
 public:
