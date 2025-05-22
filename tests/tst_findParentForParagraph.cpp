@@ -1,48 +1,110 @@
 #include <QtTest>
 #include <QCoreApplication>
 
-// add necessary includes here
+#include "../main.h"
 
-class tst_findParentForParagraph : public QObject
+class tst_findParentTest : public QObject
 {
     Q_OBJECT
 
 public:
-    tst_findParentForParagraph();
-    ~tst_findParentForParagraph();
+    tst_findParentTest();
+    ~tst_findParentTest();
 
 private slots:
     void initTestCase();
     void cleanupTestCase();
-    void test_case1();
 
+    void currentLVLbiggerThenPrevious();
+    void currentLVLequalPrevious();
+    void currentLVLlessThenPrevious();
+    void currentLVLlessThenPreviousANDmanySameParagraphs();
 };
 
-tst_findParentForParagraph::tst_findParentForParagraph()
+tst_findParentTest::tst_findParentTest()
 {
 
 }
 
-tst_findParentForParagraph::~tst_findParentForParagraph()
+tst_findParentTest::~tst_findParentTest()
 {
 
 }
 
-void tst_findParentForParagraph::initTestCase()
+void tst_findParentTest::initTestCase()
 {
 
 }
 
-void tst_findParentForParagraph::cleanupTestCase()
+void tst_findParentTest::cleanupTestCase()
 {
 
 }
 
-void tst_findParentForParagraph::test_case1()
+void tst_findParentTest::currentLVLbiggerThenPrevious()
 {
+    Paragraph root;
+    Paragraph A("A", &root, 1);
+    root.appendChild(&A);
+    Paragraph B("B", &A, 2);
+    A.appendChild(&B);
 
+    Paragraph* result = findParentForParagraph(&B, 3);
+
+    QCOMPARE(result, &B);
 }
 
-QTEST_MAIN(tst_findParentForParagraph)
+void tst_findParentTest::currentLVLequalPrevious()
+{
+    Paragraph root;
+    Paragraph A("A", &root, 1);
+    root.appendChild(&A);
+    Paragraph B("B", &A, 2);
+    A.appendChild(&B);
+
+    Paragraph* result = findParentForParagraph(&B, 2);
+
+    QCOMPARE(result, &A);
+}
+
+void tst_findParentTest::currentLVLlessThenPrevious()
+{
+    Paragraph root;
+    Paragraph A("A", &root, 1);
+    root.appendChild(&A);
+    Paragraph B("B", &A, 2);
+    A.appendChild(&B);
+
+    Paragraph* result = findParentForParagraph(&B, 1);
+
+    QCOMPARE(result, root);
+}
+
+void tst_findParentTest::currentLVLlessThenPreviousANDmanySameParagraphs()
+{
+    Paragraph root;
+    Paragraph A("A", &root, 1);
+    root.appendChild(&A);
+    Paragraph B("B", &A, 2);
+    A.appendChild(&B);
+    Paragraph C("C", &A, 2);
+    A.appendChild(&C);
+    Paragraph D("D", &C, 3);
+    C.appendChild(&D);
+    Paragraph E("E", &root, 1);
+    root.appendChild(&E);
+    Paragraph F("F", &E, 2);
+    E.appendChild(&F);
+    Paragraph G("G", &E, 2);
+    E.appendChild(&G);
+    Paragraph H("H", &G, 3);
+    G.appendChild(&H);
+
+    Paragraph* result = findParentForParagraph(&B, 2);
+
+    QCOMPARE(result, &root);
+}
+
+QTEST_MAIN(tst_findParentTest)
 
 //#include "tst_findParentForParagraph.moc"

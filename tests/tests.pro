@@ -7,4 +7,5 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += \
+    correct_tst_createHierarchy.cpp \
     tst_findParentForParagraph.cpp
