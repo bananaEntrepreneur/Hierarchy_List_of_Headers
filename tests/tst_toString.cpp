@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 
 #include "../main.h"
+#include "../paragraph.h"
 
 class testToString : public QObject {
     Q_OBJECT

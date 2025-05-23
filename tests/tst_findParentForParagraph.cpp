@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 
 #include "../main.h"
+#include "../functions.h"
 
 class tst_findParentTest : public QObject {
     Q_OBJECT

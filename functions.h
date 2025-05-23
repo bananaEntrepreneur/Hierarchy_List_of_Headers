@@ -2,6 +2,8 @@
 #define FUNCTIONS_H
 
 #include "main.h"
+#include "error.h"
+#include "paragraph.h"
 
 /*! Определить числовой уровень заголовка (H1=1, H2=2, ...)
 * \param [in] element - ссылка на элемент DOM дерева

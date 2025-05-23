@@ -10,12 +10,12 @@ Error::Error() {
 
 bool Error::operator>(const Error& other) const {
     return std::tie(type, errorTagName, errorAttrName, errorInputPath, errorInputPath)
-         > std::tie(other.type, other.errorTagName, other.errorAttrName, other.errorInputPath, other.errorInputPath);
+           > std::tie(other.type, other.errorTagName, other.errorAttrName, other.errorInputPath, other.errorInputPath);
 }
 
 bool Error::operator<(const Error& other) const {
     return std::tie(type, errorTagName, errorAttrName, errorInputPath, errorInputPath)
-         < std::tie(other.type, other.errorTagName, other.errorAttrName, other.errorInputPath, other.errorInputPath);
+           < std::tie(other.type, other.errorTagName, other.errorAttrName, other.errorInputPath, other.errorInputPath);
 }
 
 bool Error::operator==(const Error& other) const {
@@ -24,6 +24,14 @@ bool Error::operator==(const Error& other) const {
            errorAttrName == other.errorAttrName &&
            errorInputPath == other.errorInputPath &&
            errorOutputPath == other.errorOutputPath;
+}
+
+inline uint Error::qHash(const Error& value, uint seed) const{
+    return qHash(value.getIntErrorType(), seed)
+           ^ qHash(value.errorTagName, seed << 1)
+           ^ qHash(value.errorAttrName, seed << 2)
+           ^ qHash(value.errorInputPath, seed << 3)
+           ^ qHash(value.errorInputPath, seed << 4);
 }
 
 void Error::setType(ErrorType value) {
@@ -46,22 +54,37 @@ void Error::setErrorOutputPath(QString value) {
     errorOutputPath = value;
 }
 
-ErrorType Error::getErrorType() {
+ErrorType Error::getErrorType() const {
     return this->type;
 }
 
-QString Error::getErrorTagName() {
+int Error::getIntErrorType() const {
+    if (type == ErrorType::noError) return 1;
+    if (type == ErrorType::tagError) return 2;
+    if (type == ErrorType::tagAttributeError) return 3;
+    if (type == ErrorType::fileError) return 4;
+    if (type == ErrorType::htmlStructureError) return 5;
+    if (type == ErrorType::headerTagsHierarchyError) return 6;
+    if (type == ErrorType::sectionNestingError) return 7;
+    if (type == ErrorType::articleNestingError) return 8;
+    if (type == ErrorType::tooManyTagsError) return 9;
+    if (type == ErrorType::noTagError) return 10;
+    if (type == ErrorType::noHeaderTagsError) return 11;
+    return 0;
+}
+
+QString Error::getErrorTagName() const {
     return this->errorTagName;
 }
 
-QString Error::getErrorAttrName() {
+QString Error::getErrorAttrName() const {
     return this->errorAttrName;
 }
 
-QString Error::getErrorInputPath() {
+QString Error::getErrorInputPath() const {
     return this->errorInputPath;
 }
 
-QString Error::getErrorOutputPath() {
+QString Error::getErrorOutputPath() const {
     return this->errorOutputPath;
 }

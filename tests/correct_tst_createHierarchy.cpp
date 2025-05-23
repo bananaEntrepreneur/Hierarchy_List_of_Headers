@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 
 #include "../main.h"
+#include "../functions.h"
 
 class correct_tst_createHierarchy : public QObject {
     Q_OBJECT

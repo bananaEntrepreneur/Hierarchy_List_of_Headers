@@ -1,4 +1,5 @@
 #include "main.h"
+#include "functions.h"
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +21,9 @@ int main(int argc, char *argv[])
 
     Paragraph root;
 
-    createHierarchyListOfHeaderTags(&bodyElement, &root);
+    QSet<Error> errors;
+
+    createHierarchyListOfHeaderTags(bodyElement, &root, errors);
 
     QFile outputFile(argv[2]);
 

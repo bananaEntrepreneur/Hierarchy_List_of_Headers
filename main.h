@@ -7,8 +7,4 @@
 #include <QIODevice>
 #include <QFile>
 
-#include "paragraph.h"
-#include "functions.h"
-#include "error.h"
-
 #endif // MAIN_H
