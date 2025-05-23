@@ -3,11 +3,26 @@
 
 #include "main.h"
 
-enum ErrorType { noError, tagError, tagAttributeError, fileError, htmlStructureError, headerTagsHierarchyError, sectionNestingError , articleNestingError, tooManyTagsError, noTagError, noHeaderTagsError };
+enum ErrorType { noError,
+                 tagError,
+                 tagAttributeError,
+                 fileError,
+                 htmlStructureError,
+                 headerTagsHierarchyError,
+                 sectionNestingError ,
+                 articleNestingError,
+                 tooManyTagsError,
+                 noTagError,
+                 noHeaderTagsError };
 
 class Error {
 public:
     Error();
+
+    // Сравнения для QSet и сортировки
+    bool operator>(const Error& other) const;
+    bool operator<(const Error& other) const;
+    bool operator==(const Error& other) const;
 
     void setType(ErrorType value);
     void setErrorTagName(QString value);

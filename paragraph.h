@@ -19,6 +19,10 @@ public:
     QList<Paragraph*>* getChildHierarchy();
     int getLevel();
 
+    /*! Возвращает строковое представление пункта списка с нумерацией
+    \param [in] separator - разделитель между цифрами в нумерации
+    return Строковое представление пункта иерархии заголовочных тегов
+    */
     QString toString(QString separator);
 
 private:

@@ -10,4 +10,4 @@ SOURCES += \
     correct_tst_createHierarchy.cpp \
     incorrect_tst_createHierarchy.cpp \
     tst_findParentForParagraph.cpp \
-    tst_getString.cpp
+    tst_toString.cpp

@@ -6,35 +6,12 @@
 class tst_findParentTest : public QObject {
     Q_OBJECT
 
-public:
-    tst_findParentTest();
-    ~tst_findParentTest();
-
 private slots:
-    void initTestCase();
-    void cleanupTestCase();
-
     void currentLVLbiggerThenPrevious();
     void currentLVLequalPrevious();
     void currentLVLlessThenPrevious();
     void currentLVLlessThenPreviousANDmanySameParagraphs();
 };
-
-tst_findParentTest::tst_findParentTest() {
-
-}
-
-tst_findParentTest::~tst_findParentTest() {
-
-}
-
-void tst_findParentTest::initTestCase() {
-
-}
-
-void tst_findParentTest::cleanupTestCase() {
-
-}
 
 void tst_findParentTest::currentLVLbiggerThenPrevious() {
     Paragraph root;

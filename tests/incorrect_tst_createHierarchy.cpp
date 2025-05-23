@@ -6,34 +6,10 @@
 class incorrect_tst_createHierarchy : public QObject {
     Q_OBJECT
 
-public:
-    incorrect_tst_createHierarchy();
-    ~incorrect_tst_createHierarchy();
-
 private slots:
-    void initTestCase();
-    void cleanupTestCase();
-
     void noBodyChilds();
     void noHeaders();
 };
-
-incorrect_tst_createHierarchy::incorrect_tst_createHierarchy() {
-
-}
-
-incorrect_tst_createHierarchy::~incorrect_tst_createHierarchy() {
-
-}
-
-void incorrect_tst_createHierarchy::initTestCase() {
-
-}
-
-void incorrect_tst_createHierarchy::cleanupTestCase() {
-
-}
-
 
 void incorrect_tst_createHierarchy::noBodyChilds() {
     QString html =

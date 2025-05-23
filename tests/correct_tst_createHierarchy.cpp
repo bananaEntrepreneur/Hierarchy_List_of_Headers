@@ -6,14 +6,7 @@
 class correct_tst_createHierarchy : public QObject {
     Q_OBJECT
 
-public:
-    correct_tst_createHierarchy();
-    ~correct_tst_createHierarchy();
-
 private slots:
-    void initTestCase();
-    void cleanupTestCase();
-
     void basicTest();
     void manyChildsWithSameLVL();
     void manyTagsWithVariousLVL();
@@ -23,22 +16,6 @@ private slots:
     void textLikeHeaderInTagAttribute();
     void textLikeHeader();
 };
-
-correct_tst_createHierarchy::correct_tst_createHierarchy() {
-
-}
-
-correct_tst_createHierarchy::~correct_tst_createHierarchy() {
-
-}
-
-void correct_tst_createHierarchy::initTestCase() {
-
-}
-
-void correct_tst_createHierarchy::cleanupTestCase() {
-
-}
 
 void correct_tst_createHierarchy::basicTest() {
     QString html =
