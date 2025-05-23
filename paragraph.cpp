@@ -58,9 +58,28 @@ int Paragraph::getLevel() {
 }
 
 QString Paragraph::toString(QString separator) {
-
+    QVector<int> numeration;
+    return this->getString(separator, numeration);
 }
 
 QString Paragraph::getString(QString separator, QVector<int> numeration) {
+    QString result;
 
+    if (this->getLevel() > 0) {
+        QStringList numList;
+        for (int num : numeration) {
+            numList << QString::number(num);
+        }
+        result += numList.join(separator) + " " + this->text + "\n";
+    }
+
+    int index = 1;
+    for (Paragraph* child : childHierarchy) {
+        QVector<int> childNumeration = numeration;
+        childNumeration.append(index);
+        result += child->getString(separator, childNumeration);
+        ++index;
+    }
+
+    return result;
 }
