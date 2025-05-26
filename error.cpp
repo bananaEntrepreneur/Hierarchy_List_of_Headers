@@ -26,14 +26,6 @@ bool Error::operator==(const Error& other) const {
            errorOutputPath == other.errorOutputPath;
 }
 
-inline uint Error::qHash(const Error& value, uint seed) const{
-    return qHash(value.getIntErrorType(), seed)
-           ^ qHash(value.errorTagName, seed << 1)
-           ^ qHash(value.errorAttrName, seed << 2)
-           ^ qHash(value.errorInputPath, seed << 3)
-           ^ qHash(value.errorInputPath, seed << 4);
-}
-
 void Error::setType(ErrorType value) {
     type = value;
 }
