@@ -11,18 +11,23 @@
 */
 int getHeaderLevel(const QDomElement& element);
 
-/*! Поиск родителя для нового пункта
+/*! Определяет родительский параграф для текущего параграфа в зависимости от уровня заголовка
  * \param [in] previous - последний добавленный пункт в иерархию
  * \param [in] currentLevel - уровень текущего пункта
- * return указатель на родителя
+ * return указатель на найденного родителя
 */
 Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel);
 
+/*! Проверяет наличие не-текстовых (теговых) дочерних элементов
+ * \param [in] element - элемент DOM дерева
+*/
+bool hasNonTextChildElements(const QDomElement& element);
 
 /*! Построить иерархию заголовочных тегов
 * \param [in] domTreeRoot - корень DOM дерева
-* \param [in,out] root - корень иерархии заголовочных тегов
+* \param [in,out] currentParagraph - пункт иерархии заголовочных тегов
+* \param [in,out] errors - список ошибок
 */
-void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error>& errors);
+void createHierarchyListOfHeaderTags(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
 
 #endif // FUNCTIONS_H

@@ -6,5 +6,7 @@
 #include <QSet>
 #include <QIODevice>
 #include <QFile>
+#include <QtTest/QTest>
+#include <QHash>
 
 #endif // MAIN_H

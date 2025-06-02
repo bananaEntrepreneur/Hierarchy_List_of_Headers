@@ -1,20 +1,10 @@
-#include <QtTest>
-#include <QCoreApplication>
+#include "test_findParent.h"
 
-#include "../main.h"
-#include "../functions.h"
+test_findParent::test_findParent(QObject *parent)
+    : QObject{parent}
+{}
 
-class tst_findParentTest : public QObject {
-    Q_OBJECT
-
-private slots:
-    void currentLVLbiggerThenPrevious();
-    void currentLVLequalPrevious();
-    void currentLVLlessThenPrevious();
-    void currentLVLlessThenPreviousANDmanySameParagraphs();
-};
-
-void tst_findParentTest::currentLVLbiggerThenPrevious() {
+void test_findParent::currentLVLbiggerThenPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -26,7 +16,7 @@ void tst_findParentTest::currentLVLbiggerThenPrevious() {
     QCOMPARE(result, &B);
 }
 
-void tst_findParentTest::currentLVLequalPrevious() {
+void test_findParent::currentLVLequalPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -38,7 +28,7 @@ void tst_findParentTest::currentLVLequalPrevious() {
     QCOMPARE(result, &A);
 }
 
-void tst_findParentTest::currentLVLlessThenPrevious() {
+void test_findParent::currentLVLlessThenPrevious() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -47,10 +37,10 @@ void tst_findParentTest::currentLVLlessThenPrevious() {
 
     Paragraph* result = findParentForParagraph(&B, 1);
 
-    QCOMPARE(result, root);
+    QCOMPARE(result, &root);
 }
 
-void tst_findParentTest::currentLVLlessThenPreviousANDmanySameParagraphs() {
+void test_findParent::currentLVLlessThenPreviousANDmanySameParagraphs() {
     Paragraph root;
     Paragraph A("A", &root, 1);
     root.appendChild(&A);
@@ -69,11 +59,7 @@ void tst_findParentTest::currentLVLlessThenPreviousANDmanySameParagraphs() {
     Paragraph H("H", &G, 3);
     G.appendChild(&H);
 
-    Paragraph* result = findParentForParagraph(&B, 2);
+    Paragraph* result = findParentForParagraph(&H, 1);
 
     QCOMPARE(result, &root);
 }
-
-QTEST_MAIN(tst_findParentTest)
-
-//#include "tst_findParentForParagraph.moc"

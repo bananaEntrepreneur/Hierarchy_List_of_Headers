@@ -1,5 +1,8 @@
 #include "functions.h"
 
+// Глобальный флаг: найден ли заголовочный тег (h1-h6) в документе?
+static bool isAnyHeaderTagFoundInCurrentDocumentGlobal = false;
+
 int getHeaderLevel(const QDomElement& element) {
     QString tagName = element.tagName().toLower();
     if (tagName.startsWith('h') && tagName.length() == 2) {
@@ -9,102 +12,204 @@ int getHeaderLevel(const QDomElement& element) {
             return level;
         }
     }
-    if (tagName == "section" || tagName == "article") {
-        return 1;
-    }
-    return 0; // Не является тегом заголовка H1-H6
+    return 0; // Не заголовок h1-h6
 }
 
 
 Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
 {
     int previousLevel = previous->getLevel();
-
     Paragraph* root = previous;
+
+    // Поднимаемся до корня иерархии
     while (root->getLevel() > 0) {
         root = root->getParent();
     }
 
+    // Определяем родителя в зависимости от уровня
     if (currentLevel == 1 || !previous || previous == root) {
         return root;
     }
-    else if (currentLevel == previousLevel) {
-        // Тот же уровень: родитель тот же, что и у предыдущего
+    else if (currentLevel == previousLevel) { // Тот же уровень
         return previous->getParent();
     }
-    else if (currentLevel > previousLevel) {
-        // Уровень больше: текущий становится дочерним предыдущего
+    else if (currentLevel > previousLevel) { // Уровень выше → дочерний
         return previous;
     }
-    else { // currentLevel < previousLevel
+    else { // currentLevel < previousLevel → ищем подходящего предка
         Paragraph* ancestor = previous->getParent();
         while (ancestor != root && ancestor->getLevel() >= currentLevel) {
             ancestor = ancestor->getParent();
         }
-
         return ancestor;
     }
 }
 
 
-void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* root, QSet<Error>& errors) {
+bool hasNonTextChildElements(const QDomElement& element) {
+    QDomNode child = element.firstChild();
+    while (!child.isNull()) {
+        if (child.isElement()) {
+            return true; // Есть вложенный тег
+        }
+        child = child.nextSibling();
+    }
+    return false;
+}
+
+
+void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* currentHierarchyNode, QSet<Error>& errors) {
+    QString currentDomRootTagName = domTreeRoot.tagName().toLower();
+
+    // Переменные для отслеживания состояния в текущем блоке (body, section, article)
+    bool h1FoundInThisScope = false;
+    int previousHeaderLevelForThisParent = 0;
+
+    // Обработка начального вызова или вложенного раздела
+    if (currentDomRootTagName == "body") {
+        isAnyHeaderTagFoundInCurrentDocumentGlobal = false;
+        h1FoundInThisScope = false;
+        previousHeaderLevelForThisParent = 0;
+    }
+    else if (currentDomRootTagName == "section" || currentDomRootTagName == "article") {
+        h1FoundInThisScope = false;
+        previousHeaderLevelForThisParent = 0;
+    }
+
     QDomNode childNode = domTreeRoot.firstChild();
+    Paragraph* contextForNextSibling = currentHierarchyNode;
+    bool firstHeaderInThisScopeProcessed = false;
 
     while (!childNode.isNull()) {
-        Paragraph* lastAddedParagraph = nullptr;
-
         if (childNode.isElement()) {
-
             QDomElement childElement = childNode.toElement();
+            QString tagName = childElement.tagName().toLower();
 
-            // Ошибка вложенности section ИЛИ article
-            if (childElement.text() == "section" || childElement.text() == "article") {
-
+            // Проверка ошибки: section внутри section / article
+            if ((currentDomRootTagName == "section" || currentDomRootTagName == "article") &&
+                (tagName == "section" || tagName == "article")) {
                 Error nestingError;
-                nestingError.setType((childElement.text() == "section") ? ErrorType::sectionNestingError : ErrorType::articleNestingError);
-                nestingError.setErrorTagName(childElement.text());
+                nestingError.setType(currentDomRootTagName == "section" ? ErrorType::sectionNestingError : ErrorType::articleNestingError);
+                nestingError.setErrorTagName(tagName);
+                nestingError.setErrorAttrName(currentDomRootTagName);
                 errors.insert(nestingError);
-                childNode = childNode.nextSibling();
             }
 
             int headerLevel = getHeaderLevel(childElement);
 
-            Paragraph* newParagraph = nullptr;
+            if (headerLevel > 0) { // Элемент — заголовок h1-h6
+                isAnyHeaderTagFoundInCurrentDocumentGlobal = true;
 
-            if (headerLevel > 0) { // Это заголовочный тег
+                // Ошибка: заголовок вне <body> (например, в <head>)
+                if (tagName.startsWith('h')) {
+                    QDomNode parentOfChildElement = childElement.parentNode();
+                    if (parentOfChildElement.isElement()) {
+                        QString parentTag = parentOfChildElement.toElement().tagName().toLower();
+                        if (parentTag == "head") {
+                            Error structureError;
+                            structureError.setType(ErrorType::htmlStructureError);
+                            structureError.setErrorTagName(tagName);
+                            structureError.setErrorAttrName("outside_body");
+                            errors.insert(structureError);
+                        }
+                    }
+                }
 
-                // Ошибка: пустой заголовок
-                if (childElement.text().isEmpty()) {
+                // Ошибка: первый заголовок в области — не H1
+                if (tagName.startsWith('h') && !firstHeaderInThisScopeProcessed && headerLevel != 1) {
+                    Error firstHeaderError;
+                    firstHeaderError.setType(ErrorType::htmlStructureError);
+                    firstHeaderError.setErrorTagName(tagName);
+                    firstHeaderError.setErrorAttrName(currentDomRootTagName + "_first_not_h1");
+                    errors.insert(firstHeaderError);
+                }
+                if (tagName.startsWith('h')) {
+                    firstHeaderInThisScopeProcessed = true;
+                }
+
+                // Ошибка: несколько H1 в одной области
+                if (headerLevel == 1 && tagName == "h1") {
+                    if (h1FoundInThisScope) {
+                        Error tooManyH1Error;
+                        tooManyH1Error.setType(ErrorType::tooManyTagsError);
+                        tooManyH1Error.setErrorTagName("h1");
+                        tooManyH1Error.setErrorAttrName(currentDomRootTagName);
+                        errors.insert(tooManyH1Error);
+                    }
+                    h1FoundInThisScope = true;
+                }
+
+                // Ошибка иерархии заголовков (например, H1 → H3 без H2)
+                if (tagName.startsWith('h') && previousHeaderLevelForThisParent != 0 &&
+                    headerLevel > previousHeaderLevelForThisParent + 1) {
+                    Error hierarchyError;
+                    hierarchyError.setType(ErrorType::headerTagsHierarchyError);
+                    hierarchyError.setErrorTagName(tagName);
+                    errors.insert(hierarchyError);
+                }
+
+                // Проверка пустого заголовка
+                QString paragraphText = childElement.text().trimmed();
+                if (tagName.startsWith('h') && paragraphText.isEmpty()) {
                     Error emptyHeader;
                     emptyHeader.setType(ErrorType::tagError);
-                    emptyHeader.setErrorTagName(childElement.text());
+                    emptyHeader.setErrorTagName(tagName);
                     emptyHeader.setErrorAttrName("empty");
                     errors.insert(emptyHeader);
+                    previousHeaderLevelForThisParent = headerLevel;
                     childNode = childNode.nextSibling();
                     continue;
                 }
 
-                Paragraph* newParent = findParentForParagraph(root, headerLevel);
+                // Проверка наличия тегов внутри заголовка (должен содержать только текст)
+                if (tagName.startsWith('h') && hasNonTextChildElements(childElement)) {
+                    Error contentError;
+                    contentError.setType(ErrorType::tagError);
+                    contentError.setErrorTagName(tagName);
+                    contentError.setErrorAttrName("content_not_text");
+                    errors.insert(contentError);
+                    previousHeaderLevelForThisParent = headerLevel;
+                    childNode = childNode.nextSibling();
+                    continue;
+                }
 
-                newParagraph = new Paragraph(childElement.text().trimmed(), newParent, headerLevel);
+                // Добавление параграфа в иерархию
+                Paragraph* newParentNode = findParentForParagraph(contextForNextSibling, headerLevel);
+                if (!newParentNode) {
+                    previousHeaderLevelForThisParent = headerLevel;
+                    childNode = childNode.nextSibling();
+                    continue;
+                }
+                Paragraph* newParagraph = new Paragraph(paragraphText, newParentNode, headerLevel);
+                newParentNode->appendChild(newParagraph);
 
-                newParent->appendChild(newParagraph);
-
-                lastAddedParagraph = newParagraph;
-
+                // Рекурсивный вызов для вложенного содержимого заголовка
                 createHierarchyListOfHeaderTags(childElement, newParagraph, errors);
+
+                contextForNextSibling = newParagraph;
+                previousHeaderLevelForThisParent = headerLevel;
             }
-            else
-                createHierarchyListOfHeaderTags(childElement, lastAddedParagraph, errors);
+            else {
+                // Рекурсивный обход не-заголовков (div, p и т.п.)
+                createHierarchyListOfHeaderTags(childElement, contextForNextSibling, errors);
+            }
         }
-        // Переходим к следующему элементу в DOM
         childNode = childNode.nextSibling();
     }
 
-    // Ошибка: нет ни одного заголовка
-    if (childNode.isNull()) {
-        Error noHeader;
-        noHeader.setType(ErrorType::noHeaderTagsError);
-        errors.insert(noHeader);
+    // Проверка: нет ни одного заголовка в <body>
+    if (currentDomRootTagName == "body" && !isAnyHeaderTagFoundInCurrentDocumentGlobal) {
+        bool errorExists = false;
+        for (const Error& err : errors) {
+            if (err.getErrorType() == ErrorType::noHeaderTagsError) {
+                errorExists = true;
+                break;
+            }
+        }
+        if (!errorExists) {
+            Error noHeader;
+            noHeader.setType(ErrorType::noHeaderTagsError);
+            errors.insert(noHeader);
+        }
     }
 }

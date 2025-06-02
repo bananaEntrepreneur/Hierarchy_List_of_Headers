@@ -1,5 +1,6 @@
 QT -= gui
 QT += xml
+QT += testlib
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -19,7 +20,11 @@ SOURCES += \
         error.cpp \
         functions.cpp \
         main.cpp \
-        paragraph.cpp
+        paragraph.cpp \
+        test_correct_createHierarchy.cpp \
+        test_findParent.cpp \
+        test_incorrect_createHierarchy.cpp \
+        test_toString.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -30,4 +35,8 @@ HEADERS += \
     error.h \
     functions.h \
     main.h \
-    paragraph.h
+    paragraph.h \
+    test_correct_createHierarchy.h \
+    test_findParent.h \
+    test_incorrect_createHierarchy.h \
+    test_toString.h

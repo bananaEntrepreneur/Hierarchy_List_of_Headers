@@ -1,22 +1,10 @@
-#include <QtTest>
-#include <QCoreApplication>
+#include "test_toString.h"
 
-#include "../main.h"
-#include "../paragraph.h"
+test_toString::test_toString(QObject *parent)
+    : QObject{parent}
+{}
 
-class testToString : public QObject {
-    Q_OBJECT
-
-private slots:
-    void basicTest();
-    void emptyHierarchy();
-    void onlyDifferentLVL();
-    void oneParagraphHierarchy();
-    void dotIsNotSeparator();
-    void manyChilds();
-};
-
-void testToString::basicTest() {
+void test_toString::basicTest() {
     Paragraph root;
     Paragraph* h1 = new Paragraph("Lorem ipsum", &root, 1);
     root.appendChild(h1);
@@ -35,7 +23,6 @@ void testToString::basicTest() {
     h2_3->appendChild(h3_2);
     h3_2->appendChild(h4_1);
 
-    QVector<int> numeration;
     QString result = root.toString(".");
 
     QString expected =
@@ -50,7 +37,7 @@ void testToString::basicTest() {
     QCOMPARE(result, expected);
 }
 
-void testToString::manyChilds() {
+void test_toString::manyChilds() {
     Paragraph root;
 
     Paragraph* h1_1 = new Paragraph("Excepteur sint", &root, 1);
@@ -59,53 +46,52 @@ void testToString::manyChilds() {
     h1_1->appendChild(h2_1);
 
     Paragraph* h1_2 = new Paragraph("Lorem ipsum", &root, 1);
+    root.appendChild(h1_2);
     Paragraph* h2_2 = new Paragraph("Dolor sit amet", h1_2, 2);
-    Paragraph* h2_3 = new Paragraph("Consectetur adipiscing elit", h1_2, 2);
-    Paragraph* h3_1 = new Paragraph("Tempor incididunt", h2_3, 3);
-    Paragraph* h2_4 = new Paragraph("Ut labore et dolore", h1_2, 2);
-    Paragraph* h3_2 = new Paragraph("Et dolore magna", h2_4, 3);
-    Paragraph* h4_1 = new Paragraph("Ut enim ad minim", h3_2, 4);
-
     h1_2->appendChild(h2_2);
+    Paragraph* h2_3 = new Paragraph("Consectetur adipiscing elit", h1_2, 2);
     h1_2->appendChild(h2_3);
-    h1_2->appendChild(h2_4);
+    Paragraph* h3_1 = new Paragraph("Tempor incididunt", h2_3, 3);
     h2_3->appendChild(h3_1);
+    Paragraph* h2_4 = new Paragraph("Ut labore et dolore", h1_2, 2);
+    h1_2->appendChild(h2_4);
+    Paragraph* h3_2 = new Paragraph("Et dolore magna", h2_4, 3);
     h2_4->appendChild(h3_2);
+    Paragraph* h4_1 = new Paragraph("Ut enim ad minim", h3_2, 4);
     h3_2->appendChild(h4_1);
 
     Paragraph* h1_3 = new Paragraph("Quis autem", &root, 1);
     root.appendChild(h1_3);
 
-    QVector<int> numeration;
     QString result = root.toString(".");
 
     QString expected =
-            "1 Excepteur sint"
-            "1.1 Nulla pariatur"
-            "2 Lorem ipsum"
-            "2.1 Dolor sit amet"
-            "2.2 Consectetur adipiscing elit"
-            "2.2.1 Tempor incididunt"
-            "2.3 Ut labore et dolore"
-            "2.3.1 Et dolore magna"
-            "2.3.1.1 Ut enim ad minim"
-            "3 Quis autem";
+            "1 Excepteur sint\n"
+            "1.1 Nulla pariatur\n"
+            "2 Lorem ipsum\n"
+            "2.1 Dolor sit amet\n"
+            "2.2 Consectetur adipiscing elit\n"
+            "2.2.1 Tempor incididunt\n"
+            "2.3 Ut labore et dolore\n"
+            "2.3.1 Et dolore magna\n"
+            "2.3.1.1 Ut enim ad minim\n"
+            "3 Quis autem\n";
 
     QCOMPARE(result, expected);
 }
 
-void testToString::emptyHierarchy() {
+void test_toString::emptyHierarchy() {
     Paragraph root;
 
     QVector<int> numeration;
     QString result = root.toString(".");
 
-    QString expected = " ";
+    QString expected = "";
 
     QCOMPARE(result, expected);
 }
 
-void testToString::onlyDifferentLVL() {
+void test_toString::onlyDifferentLVL() {
     Paragraph root;
     Paragraph* h1 = new Paragraph("Lorem ipsum", &root, 1);
     root.appendChild(h1);
@@ -124,7 +110,6 @@ void testToString::onlyDifferentLVL() {
     h2_3->appendChild(h3_2);
     h3_2->appendChild(h4_1);
 
-    QVector<int> numeration;
     QString result = h2_3->toString(".");
 
     QString expected =
@@ -135,7 +120,7 @@ void testToString::onlyDifferentLVL() {
     QCOMPARE(result, expected);
 }
 
-void testToString::oneParagraphHierarchy() {
+void test_toString::oneParagraphHierarchy() {
     Paragraph root;
     Paragraph* h1 = new Paragraph("Lorem ipsum", &root, 1);
     root.appendChild(h1);
@@ -154,7 +139,6 @@ void testToString::oneParagraphHierarchy() {
     h2_3->appendChild(h3_2);
     h3_2->appendChild(h4_1);
 
-    QVector<int> numeration;
     QString result = h4_1->toString(".");
 
     QString expected = "1 Ut enim ad minim\n";
@@ -162,7 +146,7 @@ void testToString::oneParagraphHierarchy() {
     QCOMPARE(result, expected);
 }
 
-void testToString::dotIsNotSeparator() {
+void test_toString::dotIsNotSeparator() {
     Paragraph root;
     Paragraph* h1 = new Paragraph("Lorem ipsum", &root, 1);
     root.appendChild(h1);
@@ -181,7 +165,6 @@ void testToString::dotIsNotSeparator() {
     h2_3->appendChild(h3_2);
     h3_2->appendChild(h4_1);
 
-    QVector<int> numeration;
     QString result = root.toString(",");
 
     QString expected =
@@ -195,7 +178,3 @@ void testToString::dotIsNotSeparator() {
 
     QCOMPARE(result, expected);
 }
-
-QTEST_MAIN(testToString)
-
-//#include "tst_toString.moc"

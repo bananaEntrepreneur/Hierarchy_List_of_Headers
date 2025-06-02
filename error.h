@@ -1,7 +1,6 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <QHash>
 #include "main.h"
 
 enum ErrorType { noError,
@@ -14,30 +13,31 @@ enum ErrorType { noError,
                  articleNestingError,
                  tooManyTagsError,
                  noTagError,
-                 noHeaderTagsError };
+                 noHeaderTagsError,
+                 XMLerror };
 
 class Error {
 public:
     Error();
-
-    // Сравнения для QSet и сортировки
+    // Перегрузки сравнения для QSet
     bool operator>(const Error& other) const;
     bool operator<(const Error& other) const;
     bool operator==(const Error& other) const;
-
+    // SET-теры
     void setType(ErrorType value);
     void setErrorTagName(QString value);
     void setErrorAttrName(QString value);
     void setErrorInputPath(QString value);
     void setErrorOutputPath(QString value);
-
+    // GET-теры
     ErrorType getErrorType()const;
     int getIntErrorType()const;
     QString getErrorTagName()const;
     QString getErrorAttrName()const;
     QString getErrorInputPath()const;
     QString getErrorOutputPath()const;
-
+    /*! Возвращает строковое представление ошибки */
+    QString generateErrorMessage()const;
 private:
     ErrorType type;
     QString errorTagName;
@@ -45,10 +45,6 @@ private:
     QString errorInputPath;
     QString errorOutputPath;
 };
-
-inline uint qHash(ErrorType key, uint seed = 0) {
-    return qHash(static_cast<int>(key), seed);
-}
 
 inline uint qHash(const Error& value, uint seed) {
     seed = qHash(value.getIntErrorType(), seed);

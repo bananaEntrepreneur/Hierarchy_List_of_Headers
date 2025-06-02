@@ -1,24 +1,10 @@
-#include <QtTest>
-#include <QCoreApplication>
+#include "test_correct_createHierarchy.h"
 
-#include "../main.h"
-#include "../functions.h"
+test_correct_createHierarchy::test_correct_createHierarchy(QObject *parent)
+    : QObject{parent}
+{}
 
-class correct_tst_createHierarchy : public QObject {
-    Q_OBJECT
-
-private slots:
-    void basicTest();
-    void manyChildsWithSameLVL();
-    void manyTagsWithVariousLVL();
-    void manyTagsInsideSectionAndArticle();
-    void headerLikeTags();
-    void plaintTextBetweenHeaders();
-    void textLikeHeaderInTagAttribute();
-    void textLikeHeader();
-};
-
-void correct_tst_createHierarchy::basicTest() {
+void test_correct_createHierarchy::basicTest() {
     QString html =
         "<html>"
         "<body>"
@@ -81,7 +67,7 @@ void correct_tst_createHierarchy::basicTest() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::manyChildsWithSameLVL() {
+void test_correct_createHierarchy::manyChildsWithSameLVL() {
     QString html =
             "<html>"
             "<body>"
@@ -113,7 +99,7 @@ void correct_tst_createHierarchy::manyChildsWithSameLVL() {
 
     Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
     QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(LoremIpsumHeader->getText(), "DolorSitHeader");
+    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
 
     Paragraph* ConsecteturHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
     QCOMPARE(ConsecteturHeader->getLevel(), 2);
@@ -139,7 +125,7 @@ void correct_tst_createHierarchy::manyChildsWithSameLVL() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::manyTagsWithVariousLVL() {
+void test_correct_createHierarchy::manyTagsWithVariousLVL() {
     QString html =
             "<html>"
             "<body>"
@@ -195,7 +181,7 @@ void correct_tst_createHierarchy::manyTagsWithVariousLVL() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::manyTagsInsideSectionAndArticle() {
+void test_correct_createHierarchy::manyTagsInsideSectionAndArticle() {
     QString html =
             "<html>"
             "<body>"
@@ -237,8 +223,10 @@ void correct_tst_createHierarchy::manyTagsInsideSectionAndArticle() {
     for (int i = 0; i < 3; i++)
     {
         Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
+
         if (i == 2)
             QVERIFY(root.getChildHierarchy()->isEmpty());
+
         QCOMPARE(LoremIpsumHeader->getLevel(), 1);
         QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
 
@@ -272,7 +260,7 @@ void correct_tst_createHierarchy::manyTagsInsideSectionAndArticle() {
     }
 }
 
-void correct_tst_createHierarchy::headerLikeTags() {
+void test_correct_createHierarchy::headerLikeTags() {
     QString html =
         "<html>"
         "<body>"
@@ -337,7 +325,7 @@ void correct_tst_createHierarchy::headerLikeTags() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::plaintTextBetweenHeaders() {
+void test_correct_createHierarchy::plaintTextBetweenHeaders() {
     QString html =
         "<html>"
         "<body>"
@@ -406,12 +394,12 @@ void correct_tst_createHierarchy::plaintTextBetweenHeaders() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::textLikeHeaderInTagAttribute() {
+void test_correct_createHierarchy::textLikeHeaderInTagAttribute() {
     QString html =
             "<html>"
             "<body>"
             "<h1>Lorem ispsum</h1>"
-            "<img src= “h1.png”/>"
+            "<img src = 'h1.png'/>"
             "<h2>Dolor sit amet</h2>"
             "</body>"
             "</html>";
@@ -440,12 +428,12 @@ void correct_tst_createHierarchy::textLikeHeaderInTagAttribute() {
     QVERIFY(errors.isEmpty());
 }
 
-void correct_tst_createHierarchy::textLikeHeader() {
+void test_correct_createHierarchy::textLikeHeader() {
     QString html =
             "<html>"
             "<body>"
             "<h1>Lorem ispsum</h1>"
-            "<p> a <h1 </p>"
+            "<p> a h1 </p>"
             "<h2>Dolor sit amet</h2>"
             "</body>"
             "</html>";
@@ -473,7 +461,3 @@ void correct_tst_createHierarchy::textLikeHeader() {
 
     QVERIFY(errors.isEmpty());
 }
-
-QTEST_MAIN(correct_tst_createHierarchy)
-
-//#include "correct_tst_createHierarchy.moc"

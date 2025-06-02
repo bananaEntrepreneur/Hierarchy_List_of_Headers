@@ -3,14 +3,12 @@
 Paragraph::Paragraph() {
     text = "root";
     parent = nullptr;
-    QList<Paragraph*> childHierarchy;
     level = 0;
 }
 
 Paragraph::Paragraph(QString iText, Paragraph* iParent, int iLevel) {
     text = iText;
     parent = iParent;
-    QList<Paragraph*> childHierarchy;
     level = iLevel;
 }
 
@@ -58,28 +56,41 @@ int Paragraph::getLevel() {
 }
 
 QString Paragraph::toString(QString separator) {
-    QVector<int> numeration;
-    return this->getString(separator, numeration);
-}
-
-QString Paragraph::getString(QString separator, QVector<int> numeration) {
     QString result;
+    QVector<int> numeration;
 
-    if (this->getLevel() > 0) {
-        QStringList numList;
-        for (int num : numeration) {
-            numList << QString::number(num);
+    if (this->level == 0) { // Если вызывается от root
+        for (int i = 0; i < childHierarchy.size(); ++i) {
+            numeration.clear();
+            numeration.append(i + 1); // верхний уровень
+            result += childHierarchy[i]->getString(separator, numeration);
         }
-        result += numList.join(separator) + " " + this->text + "\n";
-    }
-
-    int index = 1;
-    for (Paragraph* child : childHierarchy) {
-        QVector<int> childNumeration = numeration;
-        childNumeration.append(index);
-        result += child->getString(separator, childNumeration);
-        ++index;
+    } else { // Если вызывается от любого другого параграфа
+        numeration.append(1);
+        result = this->getString(separator, numeration);
     }
 
     return result;
+}
+
+QString Paragraph::getString(QString separator, QVector<int>& currentNumeration) {
+    QString resultString;
+
+    // Формируем строку с текущей нумерацией
+    QStringList numerationStrings;
+    for (int num : currentNumeration) {
+        numerationStrings << QString::number(num);
+    }
+
+    if (!numerationStrings.isEmpty()) {
+        resultString += numerationStrings.join(separator) + " " + this->text + "\n";
+    }
+
+    for (int i = 0; i < childHierarchy.size(); ++i) {
+        currentNumeration.append(i + 1); // Переход к дочернему уровню
+        resultString += childHierarchy[i]->getString(separator, currentNumeration);
+        currentNumeration.removeLast(); // Откат к текущему уровню
+    }
+
+    return resultString;
 }
