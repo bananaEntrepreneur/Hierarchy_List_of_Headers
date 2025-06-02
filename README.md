@@ -1,6 +1,6 @@
 # Hierarchy List of Header Tags
 
-Программа для автоматической генерации иерархического оглавления HTML-страницы на основе заголовочных тегов ('<h1>'-'<h6>') и секций ('<section>', '<article>').
+Программа для автоматической генерации иерархического оглавления HTML-страницы на основе заголовочных тегов и секций.
 
 ---
 
@@ -31,17 +31,17 @@ $: Hierarchy_List_of_Headers.exe input.html result.txt
 ## 📝 Пример
 
 ###Входной HTML-файл
-- '<html>'
-- '<body>'
-- '<h1>'Lorem ispsum'</h1>'
-- '<h2>'Dolor sit amet'</h2>'
-- '<h2>'Consectetur adipiscing elit'</h2>'
-- '<h3>'Tempor incididunt'</h3>'
-- '<h2>'Ut labore et dolore'</h2>'
-- '<h3>'Et dolore magna'</h3>'
-- '<h4>'Ut enim ad minim'</h4>'
-- '</body>'
-- '</html>'
+- `<html>`
+- `<body>`
+- `<h1>`Lorem ispsum`</h1>`
+- `<h2>`Dolor sit amet`</h2>`
+- `<h2>`Consectetur adipiscing elit`</h2>`
+- `<h3>`Tempor incididunt`</h3>`
+- `<h2>`Ut labore et dolore`</h2>`
+- `<h3>`Et dolore magna`</h3>`
+- `<h4>`Ut enim ad minim`</h4>`
+- `</body>`
+- `</html>`
 
 ###Иерархия заголовочных тегов
 - 1 Lorem ipsum
