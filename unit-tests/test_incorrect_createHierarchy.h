@@ -1,9 +1,9 @@
 #ifndef TEST_INCORRECT_CREATEHIERARCHY_H
 #define TEST_INCORRECT_CREATEHIERARCHY_H
 
-#include "main.h"
-#include "paragraph.h"
-#include "functions.h"
+#include "../main.h"
+#include "../paragraph.h"
+#include "../functions.h"
 
 class test_incorrect_createHierarchy : public QObject {
     Q_OBJECT
@@ -24,7 +24,6 @@ private slots:
     void headerHierarchySkipLevel();
     void headerContainsOtherTags();
     void firstHeaderInSectionNotH1();
-    //void scriptTagContent();
 };
 
 #endif // TEST_INCORRECT_CREATEHIERARCHY_H

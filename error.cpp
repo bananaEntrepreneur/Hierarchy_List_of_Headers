@@ -167,6 +167,9 @@ QString Error::generateErrorMessage() const {
                 // Аналогично секциям, для <article>
                 return QString("Ошибка: первым заголовочным тегом в <article> может быть только <h1>.");
             }
+            if (errorTagName == "script") {
+                return QString("Ошибка: Содержимое тега <script> не учитывается.");
+            }
             return QString("Ошибка структуры HTML: Тег <%1>, Атрибут/Контекст '%2'.").arg(errorTagName).arg(errorAttrName);
 
         case ErrorType::headerTagsHierarchyError:

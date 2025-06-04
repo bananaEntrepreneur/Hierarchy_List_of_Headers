@@ -3,61 +3,6 @@
 // Глобальный флаг: найден ли заголовочный тег (h1-h6) в документе?
 static bool isAnyHeaderTagFoundInCurrentDocumentGlobal = false;
 
-int getHeaderLevel(const QDomElement& element) {
-    QString tagName = element.tagName().toLower();
-    if (tagName.startsWith('h') && tagName.length() == 2) {
-        bool ok;
-        int level = tagName.mid(1).toInt(&ok);
-        if (ok && level >= 1 && level <= 6) {
-            return level;
-        }
-    }
-    return 0; // Не заголовок h1-h6
-}
-
-
-Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
-{
-    int previousLevel = previous->getLevel();
-    Paragraph* root = previous;
-
-    // Поднимаемся до корня иерархии
-    while (root->getLevel() > 0) {
-        root = root->getParent();
-    }
-
-    // Определяем родителя в зависимости от уровня
-    if (currentLevel == 1 || !previous || previous == root) {
-        return root;
-    }
-    else if (currentLevel == previousLevel) { // Тот же уровень
-        return previous->getParent();
-    }
-    else if (currentLevel > previousLevel) { // Уровень выше → дочерний
-        return previous;
-    }
-    else { // currentLevel < previousLevel → ищем подходящего предка
-        Paragraph* ancestor = previous->getParent();
-        while (ancestor != root && ancestor->getLevel() >= currentLevel) {
-            ancestor = ancestor->getParent();
-        }
-        return ancestor;
-    }
-}
-
-
-bool hasNonTextChildElements(const QDomElement& element) {
-    QDomNode child = element.firstChild();
-    while (!child.isNull()) {
-        if (child.isElement()) {
-            return true; // Есть вложенный тег
-        }
-        child = child.nextSibling();
-    }
-    return false;
-}
-
-
 void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* currentHierarchyNode, QSet<Error>& errors) {
     QString currentDomRootTagName = domTreeRoot.tagName().toLower();
 
@@ -212,4 +157,125 @@ void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* curren
             errors.insert(noHeader);
         }
     }
+}
+
+Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
+{
+    int previousLevel = previous->getLevel();
+    Paragraph* root = previous;
+
+    // Поднимаемся до корня иерархии
+    while (root->getLevel() > 0) {
+        root = root->getParent();
+    }
+
+    // Определяем родителя в зависимости от уровня
+    if (currentLevel == 1 || !previous || previous == root) {
+        return root;
+    }
+    else if (currentLevel == previousLevel) { // Тот же уровень
+        return previous->getParent();
+    }
+    else if (currentLevel > previousLevel) { // Уровень выше → дочерний
+        return previous;
+    }
+    else { // currentLevel < previousLevel → ищем подходящего предка
+        Paragraph* ancestor = previous->getParent();
+        while (ancestor != root && ancestor->getLevel() >= currentLevel) {
+            ancestor = ancestor->getParent();
+        }
+        return ancestor;
+    }
+}
+
+QDomDocument createDomTreeFromFile(QString path, QSet<Error>& errors) {
+    QFile inputFile(path);
+
+    if (!inputFile.open(QIODevice::ReadOnly)) {
+        Error fileError;
+        fileError.setType(ErrorType::fileError);
+        fileError.setErrorInputPath(path);
+        fileError.setErrorAttrName("input_non_existent");
+        errors.insert(fileError);
+    }
+
+    QDomDocument domTree;
+    QString errorMessage;
+    int errorLine, errorColumn;
+
+    if (inputFile.isOpen()) {
+        if (!domTree.setContent(&inputFile, &errorMessage, &errorLine, &errorColumn)) {
+            Error parseError;
+            parseError.setType(ErrorType::XMLerror);
+            parseError.setErrorInputPath(path);
+            parseError.setErrorAttrName("xml_parse_error: " + errorMessage);
+            errors.insert(parseError);
+        }
+        inputFile.close();
+
+        QDomElement docElem = domTree.documentElement();
+        QDomElement bodyElement;
+
+        if (!docElem.isNull())
+            bodyElement = docElem.firstChildElement("body");
+
+        QDomElement scriptElement = bodyElement.firstChildElement("script");
+
+        if (bodyElement.isNull()) {
+            Error noBodyError;
+            noBodyError.setType(ErrorType::noTagError);
+            noBodyError.setErrorTagName("body");
+            noBodyError.setErrorAttrName("not_found");
+            errors.insert(noBodyError);
+        }
+        if (!scriptElement.isNull()) {
+            Error scriptError;
+            scriptError.setType(ErrorType::htmlStructureError);
+            scriptError.setErrorTagName("script");
+            errors.insert(scriptError);
+        }
+    }
+
+    return domTree;
+}
+
+void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Error> errors) {
+    QFile outputFile(path);
+
+    if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QString textImplementationOfHierarchy = root->toString(".");
+        QTextStream out(&outputFile);
+        out.setCodec("UTF-8");
+        out << textImplementationOfHierarchy;
+        outputFile.close();
+    } else {
+        Error outputError;
+        outputError.setType(ErrorType::fileError);
+        outputError.setErrorOutputPath(path);
+        outputError.setErrorAttrName("output_cannot_create");
+        errors.insert(outputError);
+    }
+}
+
+int getHeaderLevel(const QDomElement& element) {
+    QString tagName = element.tagName().toLower();
+    if (tagName.startsWith('h') && tagName.length() == 2) {
+        bool ok;
+        int level = tagName.mid(1).toInt(&ok);
+        if (ok && level >= 1 && level <= 6) {
+            return level;
+        }
+    }
+    return 0; // Не заголовок h1-h6
+}
+
+bool hasNonTextChildElements(const QDomElement& element) {
+    QDomNode child = element.firstChild();
+    while (!child.isNull()) {
+        if (child.isElement()) {
+            return true; // Есть вложенный тег
+        }
+        child = child.nextSibling();
+    }
+    return false;
 }

@@ -5,11 +5,12 @@
 #include "error.h"
 #include "paragraph.h"
 
-/*! Определить числовой уровень заголовка (H1=1, H2=2, ...)
-* \param [in] element - ссылка на элемент DOM дерева
-* return числовой уровень заголовка. 0 если элемент не является валидным тегом заголовка H1-H6
+/*! Построить иерархию заголовочных тегов
+* \param [in] domTreeRoot - корень DOM дерева
+* \param [in,out] currentParagraph - пункт иерархии заголовочных тегов
+* \param [in,out] errors - список ошибок
 */
-int getHeaderLevel(const QDomElement& element);
+void createHierarchyListOfHeaderTags(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
 
 /*! Определяет родительский параграф для текущего параграфа в зависимости от уровня заголовка
  * \param [in] previous - последний добавленный пункт в иерархию
@@ -18,16 +19,23 @@ int getHeaderLevel(const QDomElement& element);
 */
 Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel);
 
+/*!
+*/
+QDomDocument createDomTreeFromFile(QString path, QSet<Error>& errors);
+
+/*!
+*/
+void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Error> errors);
+
+/*! Определить числовой уровень заголовка (H1=1, H2=2, ...)
+* \param [in] element - ссылка на элемент DOM дерева
+* return числовой уровень заголовка. 0 если элемент не является валидным тегом заголовка H1-H6
+*/
+int getHeaderLevel(const QDomElement& element);
+
 /*! Проверяет наличие не-текстовых (теговых) дочерних элементов
  * \param [in] element - элемент DOM дерева
 */
 bool hasNonTextChildElements(const QDomElement& element);
-
-/*! Построить иерархию заголовочных тегов
-* \param [in] domTreeRoot - корень DOM дерева
-* \param [in,out] currentParagraph - пункт иерархии заголовочных тегов
-* \param [in,out] errors - список ошибок
-*/
-void createHierarchyListOfHeaderTags(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
 
 #endif // FUNCTIONS_H
