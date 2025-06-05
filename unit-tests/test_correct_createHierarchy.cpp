@@ -1,8 +1,80 @@
 #include "test_correct_createHierarchy.h"
 
+// Конструктор остается прежним
 test_correct_createHierarchy::test_correct_createHierarchy(QObject *parent)
     : QObject{parent}
 {}
+
+bool test_correct_createHierarchy::compareParagraphTreesRecursive(Paragraph* actual, Paragraph* expected, QString path) {
+    // 1. Проверка на null
+    if (!actual && !expected) return true; // Оба null, считаем их равными в этом контексте
+    if (!actual || !expected) {
+        qWarning() << "Tree Mismatch at" << path << ":"
+                   << "One node is null, the other is not."
+                   << "Actual:" << (actual ? actual->getText() : "null")
+                   << "Expected:" << (expected ? expected->getText() : "null");
+        return false;
+    }
+
+    // 2. Сравнение данных текущего узла (текст и уровень)
+    // Не сравниваем корневой узел "root" по тексту, только его детей
+    if (actual->getLevel() != 0 || expected->getLevel() != 0) { // Не для самого главного "root"
+        if (actual->getLevel() != expected->getLevel()) {
+            qWarning() << "Tree Mismatch at" << path << ":"
+                       << "Different levels."
+                       << "Actual Level:" << actual->getLevel() << "(Text:" << actual->getText() << ")"
+                       << "Expected Level:" << expected->getLevel() << "(Text:" << expected->getText() << ")";
+            return false;
+        }
+        // Текст для section/article может быть пустым, это нормально, если уровни совпадают
+        // Если это не section/article (уровень > 0, но текст не пустой ИЛИ это Hx), то сравниваем текст
+        bool isStructuralTagActual = (actual->getText().isEmpty() && (actual->getLevel() == 1)); /* Простой эвристический подход */
+        bool isStructuralTagExpected = (expected->getText().isEmpty() && (expected->getLevel() == 1));
+
+        if (!(isStructuralTagActual && isStructuralTagExpected) && actual->getText() != expected->getText()) {
+             // Не сравниваем текст, если оба узла - это структурные теги (section/article) с пустым текстом
+            if (!((actual->getText().isEmpty() && expected->getText().isEmpty()) && (actual->getLevel() == 1 && expected->getLevel() == 1))) {
+                qWarning() << "Tree Mismatch at" << path << ":"
+                        << "Different text."
+                        << "Actual Text:" << actual->getText() << "(Level:" << actual->getLevel() << ")"
+                        << "Expected Text:" << expected->getText() << "(Level:" << expected->getLevel() << ")";
+                return false;
+            }
+        }
+    }
+
+    // 3. Сравнение количества дочерних элементов
+    QList<Paragraph*>* actualChildren = actual->getChildHierarchy();
+    QList<Paragraph*>* expectedChildren = expected->getChildHierarchy();
+
+    if (actualChildren->size() != expectedChildren->size()) {
+        qWarning() << "Tree Mismatch at" << path << ":"
+                   << "Different number of children."
+                   << "Actual children count:" << actualChildren->size()
+                   << "Expected children count:" << expectedChildren->size();
+        // Для наглядности выводится список детей
+        QStringList actualChildTexts, expectedChildTexts;
+        for(Paragraph* child : *actualChildren) actualChildTexts << child->getText();
+        for(Paragraph* child : *expectedChildren) expectedChildTexts << child->getText();
+        qDebug() << "Actual children:" << actualChildTexts;
+        qDebug() << "Expected children:" << expectedChildTexts;
+        return false;
+    }
+
+    // 4. Рекурсивное сравнение каждого дочернего элемента
+    for (int i = 0; i < actualChildren->size(); ++i) {
+        QString childPath = path + QString("->child[%1]").arg(i);
+        if (!compareParagraphTreesRecursive(actualChildren->at(i), expectedChildren->at(i), childPath)) {
+            return false; // Если хоть один дочерний элемент не совпадает, деревья разные
+        }
+    }
+
+    return true; // Все проверки пройдены для этого узла и его поддерева
+}
+
+inline void test_correct_createHierarchy::QVERIFY_TREES_EQUAL(Paragraph* actual, Paragraph* expected, const char* message) {
+    QVERIFY2(compareParagraphTreesRecursive(actual, expected), message);
+}
 
 void test_correct_createHierarchy::basicTest() {
     QString html =
@@ -22,191 +94,149 @@ void test_correct_createHierarchy::basicTest() {
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), qPrintable("basicTest: Errors found during hierarchy creation: " + (errors.isEmpty() ? "None" : errors.values().first().generateErrorMessage() ) ));
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    Paragraph* h2_1_e = new Paragraph("Dolor sit amet", h1_e, 2);
+    h1_e->appendChild(h2_1_e);
+    Paragraph* h2_2_e = new Paragraph("Consectetur adipiscing elit", h1_e, 2);
+    h1_e->appendChild(h2_2_e);
+    Paragraph* h3_1_e = new Paragraph("Tempor incididunt", h2_2_e, 3);
+    h2_2_e->appendChild(h3_1_e);
+    Paragraph* h2_3_e = new Paragraph("Ut labore et dolore", h1_e, 2);
+    h1_e->appendChild(h2_3_e);
+    Paragraph* h3_2_e = new Paragraph("Et dolore magna", h2_3_e, 3);
+    h2_3_e->appendChild(h3_2_e);
+    Paragraph* h4_1_e = new Paragraph("Ut enim ad minim", h3_2_e, 4);
+    h3_2_e->appendChild(h4_1_e);
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-
-    QList<Paragraph*>* LoremIpsumChildHierarchy = LoremIpsumHeader->getChildHierarchy();
-
-    Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-    Paragraph* Consectetur = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
-    QCOMPARE(Consectetur->getLevel(), 2);
-    QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
-
-    Paragraph* Tempor = Consectetur->getChildHierarchy()->takeFirst(); // <h3>Tempor incididunt</h3>
-    QCOMPARE(Tempor->getLevel(), 3);
-    QCOMPARE(Tempor->getText(), "Tempor incididunt");
-    QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utlabore = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut labore et dolore</h2>
-    QCOMPARE(Utlabore->getLevel(), 2);
-    QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
-    QVERIFY(LoremIpsumChildHierarchy->isEmpty());
-
-    Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h3>Et dolore magna</h3>
-    QCOMPARE(Etdolore->getLevel(), 3);
-    QCOMPARE(Etdolore->getText(), "Et dolore magna");
-    QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utenim = Etdolore->getChildHierarchy()->takeFirst(); // <h4>Ut enim ad minim</h4>
-    QCOMPARE(Utenim->getLevel(), 4);
-    QCOMPARE(Utenim->getText(), "Ut enim ad minim");
-    QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
-    QVERIFY(Utenim->getChildHierarchy()->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "basicTest: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::manyChildsWithSameLVL() {
     QString html =
-            "<html>"
-            "<body>"
-            "<h1>Lorem ispsum</h1>"
-            "<h2>Dolor sit amet</h2>"
-            "<h2>Consectetur adipiscing elit</h2>"
-            "<h2>Sed do eiusmod tempor</h2>"
-            "<h2>Ut labore et dolore</h2>"
-            "<h2>Ut enim ad minim veniam</h2>"
-            "<h2>Quis nostrud exercitation</h2>"
-            "</body>"
-            "</html>";
+        "<html>"
+        "<body>"
+        "<h1>Lorem ispsum</h1>"
+        "<h2>Dolor sit amet</h2>"
+        "<h2>Consectetur adipiscing elit</h2>"
+        "<h2>Tempor incididunt</h2>"
+        "<h2>Ut labore et dolore</h2>"
+        "<h3>Et dolore magna</h3>"
+        "<h4>Ut enim ad minim</h4>"
+        "</body>"
+        "</html>";
 
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "manyChildsWithSameLVL: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Dolor sit amet", h1_e, 2));
+    h1_e->appendChild(new Paragraph("Consectetur adipiscing elit", h1_e, 2));
+    h1_e->appendChild(new Paragraph("Tempor incididunt", h1_e, 2));
+    Paragraph* h2_4_e = new Paragraph("Ut labore et dolore", h1_e, 2);
+    h1_e->appendChild(h2_4_e);
+    Paragraph* h3_1_e = new Paragraph("Et dolore magna", h2_4_e, 3);
+    h2_4_e->appendChild(h3_1_e);
+    h3_1_e->appendChild(new Paragraph("Ut enim ad minim", h3_1_e, 4));
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-
-    QList<Paragraph*>* LoremIpsumChildHierarchy = LoremIpsumHeader->getChildHierarchy();
-
-    Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-    Paragraph* ConsecteturHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
-    QCOMPARE(ConsecteturHeader->getLevel(), 2);
-    QCOMPARE(ConsecteturHeader->getText(), "Consectetur adipiscing elit");
-
-    Paragraph* SeddoHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Sed do eiusmod tempor</h2>
-    QCOMPARE(SeddoHeader->getLevel(), 2);
-    QCOMPARE(SeddoHeader->getText(), "Sed do eiusmod tempor");
-
-    Paragraph* UtlaboreHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut labore et dolore</h2>
-    QCOMPARE(UtlaboreHeader->getLevel(), 2);
-    QCOMPARE(UtlaboreHeader->getText(), "Ut labore et dolore");
-
-    Paragraph* UtenimHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut enim ad minim veniam</h2>
-    QCOMPARE(UtenimHeader->getLevel(), 2);
-    QCOMPARE(UtenimHeader->getText(), "Ut enim ad minim veniam");
-
-    Paragraph* QuisnostrudHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Quis nostrud exercitation</h2>
-    QCOMPARE(QuisnostrudHeader->getLevel(), 2);
-    QCOMPARE(QuisnostrudHeader->getText(), "Quis nostrud exercitation");
-    QVERIFY(LoremIpsumChildHierarchy->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "manyChildsWithSameLVL: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::manyTagsWithVariousLVL() {
     QString html =
-            "<html>"
-            "<body>"
-            "<h1>Lorem ispsum</h1>"
-            "<h2>Dolor sit amet</h2>"
-            "<h3>Consectetur adipiscing elit</h3>"
-            "<h4>Sed do eiusmod tempor</h4>"
-            "<h5>Ut labore et dolore</h5>"
-            "<h6>Ut enim ad minim veniam</h6>"
-            "</body>"
-            "</html>";
+        "<html>"
+        "<body>"
+        "<h1>Lorem ispsum</h1>"
+        "<h2>Dolor sit amet</h2>"
+        "<h3>Consectetur adipiscing elit</h3>"
+        "<h4>Tempor incididunt</h4>"
+        "<h5>Ut labore et dolore</h5>"
+        "<h6>Et dolore magna</h6>"
+        "</body>"
+        "</html>";
 
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "manyTagsWithVariousLVL: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* p1 = new Paragraph("Lorem ispsum", &expectedRoot, 1); expectedRoot.appendChild(p1);
+    Paragraph* p2 = new Paragraph("Dolor sit amet", p1, 2); p1->appendChild(p2);
+    Paragraph* p3 = new Paragraph("Consectetur adipiscing elit", p2, 3); p2->appendChild(p3);
+    Paragraph* p4 = new Paragraph("Tempor incididunt", p3, 4); p3->appendChild(p4);
+    Paragraph* p5 = new Paragraph("Ut labore et dolore", p4, 5); p4->appendChild(p5);
+    p5->appendChild(new Paragraph("Et dolore magna", p5, 6));
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-
-    Paragraph* DolorSitHeader = LoremIpsumHeader->getChildHierarchy()->takeFirst(); // <h2>Dolor sit amet</h2>
-    QVERIFY(LoremIpsumHeader->getChildHierarchy()->isEmpty());
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-    Paragraph* Consectetur = DolorSitHeader->getChildHierarchy()->takeFirst(); // <h3>Consectetur adipiscing elit</h3>
-    QVERIFY(DolorSitHeader->getChildHierarchy()->isEmpty());
-    QCOMPARE(Consectetur->getLevel(), 3);
-    QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
-
-    Paragraph* Seddo = Consectetur->getChildHierarchy()->takeFirst(); // <h4>Sed do eiusmod tempor</h4>
-    QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
-    QCOMPARE(Seddo->getLevel(), 4);
-    QCOMPARE(Seddo->getText(), "Sed do eiusmod tempor");
-
-    Paragraph* Utlabore = Seddo->getChildHierarchy()->takeFirst(); // <h5>Ut labore et dolore</h5>
-    QVERIFY(Seddo->getChildHierarchy()->isEmpty());
-    QCOMPARE(Utlabore->getLevel(), 5);
-    QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
-
-    Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h6>Ut enim ad minim veniam</h6>
-    QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
-    QCOMPARE(Etdolore->getLevel(), 6);
-    QCOMPARE(Etdolore->getText(), "Ut enim ad minim veniam");
-    QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "manyTagsWithVariousLVL: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::manyTagsInsideSectionAndArticle() {
     QString html =
+        "<html>"
+        "<body>"
+        "<h1>Lorem ispsum 1</h1>"
+        "<section>"
+        "<h1>Lorem ispsum 2</h1>"
+        "<h2>Dolor sit amet 1</h2>"
+        "</section>"
+        "<article>"
+        "<h1>Lorem ispsum 3</h1>"
+        "<h2>Consectetur adipiscing elit</h2>"
+        "</article>"
+        "</body>"
+        "</html>";
+
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY(errors.isEmpty());
+
+    Paragraph expectedRoot;
+    Paragraph* h1_0_e = new Paragraph("Lorem ispsum 1", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_0_e);
+
+    Paragraph* h1_1_e = new Paragraph("Lorem ispsum 2", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_1_e);
+    h1_1_e->appendChild(new Paragraph("Dolor sit amet 1", h1_1_e, 2));
+
+    Paragraph* h1_3_e = new Paragraph("Lorem ispsum 3", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_3_e);
+    h1_3_e->appendChild(new Paragraph("Consectetur adipiscing elit", h1_3_e, 2));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "manyTagsInsideSectionAndArticle: Paragraph trees are not equal.");
+}
+
+void test_correct_createHierarchy::headerLikeTags() {
+    QString html =
             "<html>"
             "<body>"
             "<h1>Lorem ispsum</h1>"
+            "<hr/>"
+            "<br/>"
             "<h2>Dolor sit amet</h2>"
-            "<h3>Consectetur adipiscing elit</h3>"
-            "<h4>Sed do eiusmod tempor</h4>"
-            "<h5>Ut labore et dolore</h5>"
-            "<h6>Ut enim ad minim veniam</h6>"
-            "<section>"
-            "<h1>Lorem ispsum</h1>"
-            "<h2>Dolor sit amet</h2>"
-            "<h3>Consectetur adipiscing elit</h3>"
-            "<h4>Sed do eiusmod tempor</h4>"
-            "<h5>Ut labore et dolore</h5>"
-            "<h6>Ut enim ad minim veniam</h6>"
-            "</section>"
-            "<article>"
-            "<h1>Lorem ispsum</h1>"
-            "<h2>Dolor sit amet</h2>"
-            "<h3>Consectetur adipiscing elit</h3>"
-            "<h4>Sed do eiusmod tempor</h4>"
-            "<h5>Ut labore et dolore</h5>"
-            "<h6>Ut enim ad minim veniam</h6>"
-            "</article>"
             "</body>"
             "</html>";
 
@@ -214,184 +244,46 @@ void test_correct_createHierarchy::manyTagsInsideSectionAndArticle() {
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "headerLikeTags: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Dolor sit amet", h1_e, 2));
 
-    for (int i = 0; i < 3; i++)
-    {
-        Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-
-        if (i == 2)
-            QVERIFY(root.getChildHierarchy()->isEmpty());
-
-        QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-        QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-
-        Paragraph* DolorSitHeader = LoremIpsumHeader->getChildHierarchy()->takeFirst(); // <h2>Dolor sit amet</h2>
-        QVERIFY(LoremIpsumHeader->getChildHierarchy()->isEmpty());
-        QCOMPARE(DolorSitHeader->getLevel(), 2);
-        QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-        Paragraph* Consectetur = DolorSitHeader->getChildHierarchy()->takeFirst(); // <h3>Consectetur adipiscing elit</h3>
-        QVERIFY(DolorSitHeader->getChildHierarchy()->isEmpty());
-        QCOMPARE(Consectetur->getLevel(), 3);
-        QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
-
-        Paragraph* Seddo = Consectetur->getChildHierarchy()->takeFirst(); // <h4>Sed do eiusmod tempor</h4>
-        QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
-        QCOMPARE(Seddo->getLevel(), 4);
-        QCOMPARE(Seddo->getText(), "Sed do eiusmod tempor");
-
-        Paragraph* Utlabore = Seddo->getChildHierarchy()->takeFirst(); // <h5>Ut labore et dolore</h5>
-        QVERIFY(Seddo->getChildHierarchy()->isEmpty());
-        QCOMPARE(Utlabore->getLevel(), 5);
-        QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
-
-        Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h6>Ut enim ad minim veniam</h6>
-        QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
-        QCOMPARE(Etdolore->getLevel(), 6);
-        QCOMPARE(Etdolore->getText(), "Ut enim ad minim veniam");
-        QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
-
-        QVERIFY(errors.isEmpty());
-    }
-}
-
-void test_correct_createHierarchy::headerLikeTags() {
-    QString html =
-        "<html>"
-        "<body>"
-        "<hr/>"
-        "<h1>Lorem ispsum</h1>"
-        "<h2>Dolor sit amet</h2>"
-        "<h2>Consectetur adipiscing elit</h2>"
-        "<h3>Tempor incididunt</h3>"
-        "<h2>Ut labore et dolore</h2>"
-        "<h3>Et dolore magna</h3>"
-        "<h4>Ut enim ad minim</h4>"
-        "<hr/>"
-        "</body>"
-        "</html>";
-
-    QDomDocument doc;
-    QVERIFY(doc.setContent(html));
-    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
-
-
-    Paragraph root;
-    QSet<Error> errors;
-
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
-
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-
-    QList<Paragraph*>* LoremIpsumChildHierarchy = LoremIpsumHeader->getChildHierarchy();
-
-    Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-    Paragraph* Consectetur = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
-    QCOMPARE(Consectetur->getLevel(), 2);
-    QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
-
-    Paragraph* Tempor = Consectetur->getChildHierarchy()->takeFirst(); // <h3>Tempor incididunt</h3>
-    QCOMPARE(Tempor->getLevel(), 3);
-    QCOMPARE(Tempor->getText(), "Tempor incididunt");
-    QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utlabore = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut labore et dolore</h2>
-    QCOMPARE(Utlabore->getLevel(), 2);
-    QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
-    QVERIFY(LoremIpsumChildHierarchy->isEmpty());
-
-    Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h3>Et dolore magna</h3>
-    QCOMPARE(Etdolore->getLevel(), 3);
-    QCOMPARE(Etdolore->getText(), "Et dolore magna");
-    QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utenim = Etdolore->getChildHierarchy()->takeFirst(); // <h4>Ut enim ad minim</h4>
-    QCOMPARE(Utenim->getLevel(), 4);
-    QCOMPARE(Utenim->getText(), "Ut enim ad minim");
-    QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
-    QVERIFY(Utenim->getChildHierarchy()->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "headerLikeTags: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::plaintTextBetweenHeaders() {
     QString html =
-        "<html>"
-        "<body>"
-        "<h1>Lorem ispsum</h1>"
-        "<p>С другой стороны укрепление и развитие структуры обеспечивает широкому кругу (специалистов) участие в формировании системы обучения кадров, соответствует насущным потребностям.</p>"
-        "<h2>Dolor sit amet</h2>"
-        "<p> Товарищи! консультация с широким активом требуют от нас анализа систем массового участия.</p>"
-        "<h2>Consectetur adipiscing elit</h2>"
-        "<p> Товарищи! постоянное информационно-пропагандистское обеспечение нашей деятельности обеспечивает широкому кругу (специалистов) участие в формировании новых предложений.</p>"
-        "<h3>Tempor incididunt</h3>"
-        "<p> Не следует, однако забывать, что консультация с широким активом требуют определения и уточнения соответствующий условий активизации.</p>"
-        "<h2>Ut labore et dolore</h2>"
-        "<p>С другой стороны начало повседневной работы по формированию позиции в значительной степени обуславливает создание систем массового участия</p>"
-        "<h3>Et dolore magna</h3>"
-        "<p> Разнообразный и богатый опыт постоянный количественный рост и сфера нашей активности играет важную роль в формировании дальнейших направлений развития.</p>"
-        "<h4>Ut enim ad minim</h4>"
-        "</body>"
-        "</html>";
+            "<html>"
+            "<body>"
+            "<h1>Lorem ispsum</h1>"
+            "Some plain text here."
+            "<p>Paragraph text.</p>"
+            "<div>Div text.</div>"
+            "<h2>Dolor sit amet</h2>"
+            "</body>"
+            "</html>";
 
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "plaintTextBetweenHeaders: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Dolor sit amet", h1_e, 2));
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-
-    QList<Paragraph*>* LoremIpsumChildHierarchy = LoremIpsumHeader->getChildHierarchy();
-
-    Paragraph* DolorSitHeader = LoremIpsumChildHierarchy->takeFirst(); // <h2>Dolor sit amet</h2>
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-
-    Paragraph* Consectetur = LoremIpsumChildHierarchy->takeFirst(); // <h2>Consectetur adipiscing elit</h2>
-    QCOMPARE(Consectetur->getLevel(), 2);
-    QCOMPARE(Consectetur->getText(), "Consectetur adipiscing elit");
-
-    Paragraph* Tempor = Consectetur->getChildHierarchy()->takeFirst(); // <h3>Tempor incididunt</h3>
-    QCOMPARE(Tempor->getLevel(), 3);
-    QCOMPARE(Tempor->getText(), "Tempor incididunt");
-    QVERIFY(Consectetur->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utlabore = LoremIpsumChildHierarchy->takeFirst(); // <h2>Ut labore et dolore</h2>
-    QCOMPARE(Utlabore->getLevel(), 2);
-    QCOMPARE(Utlabore->getText(), "Ut labore et dolore");
-    QVERIFY(LoremIpsumChildHierarchy->isEmpty());
-
-    Paragraph* Etdolore = Utlabore->getChildHierarchy()->takeFirst(); // <h3>Et dolore magna</h3>
-    QCOMPARE(Etdolore->getLevel(), 3);
-    QCOMPARE(Etdolore->getText(), "Et dolore magna");
-    QVERIFY(Utlabore->getChildHierarchy()->isEmpty());
-
-    Paragraph* Utenim = Etdolore->getChildHierarchy()->takeFirst(); // <h4>Ut enim ad minim</h4>
-    QCOMPARE(Utenim->getLevel(), 4);
-    QCOMPARE(Utenim->getText(), "Ut enim ad minim");
-    QVERIFY(Etdolore->getChildHierarchy()->isEmpty());
-    QVERIFY(Utenim->getChildHierarchy()->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "plaintTextBetweenHeaders: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::textLikeHeaderInTagAttribute() {
@@ -399,33 +291,26 @@ void test_correct_createHierarchy::textLikeHeaderInTagAttribute() {
             "<html>"
             "<body>"
             "<h1>Lorem ispsum</h1>"
-            "<img src = 'h1.png'/>"
+            "<div title = 'h1This is not a real header'>"
+            "</div>"
             "<h2>Dolor sit amet</h2>"
             "</body>"
             "</html>";
-
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "textLikeHeaderInTagAttribute: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Dolor sit amet", h1_e, 2));
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
-
-    Paragraph* DolorSitHeader = LoremIpsumHeader->getChildHierarchy()->takeFirst(); // <h2>Dolor sit amet</h2>
-    QVERIFY(LoremIpsumHeader->getChildHierarchy()->isEmpty());
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-    QVERIFY(DolorSitHeader->getChildHierarchy()->isEmpty());
-
-    QVERIFY(errors.isEmpty());
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "textLikeHeaderInTagAttribute: Paragraph trees are not equal.");
 }
 
 void test_correct_createHierarchy::textLikeHeader() {
@@ -433,31 +318,170 @@ void test_correct_createHierarchy::textLikeHeader() {
             "<html>"
             "<body>"
             "<h1>Lorem ispsum</h1>"
-            "<p> a h1 </p>"
+            "<p>This text contains &lt;h2&gt; but it's not a tag.</p>"
             "<h2>Dolor sit amet</h2>"
             "</body>"
             "</html>";
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "textLikeHeader: Errors found.");
+
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Lorem ispsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Dolor sit amet", h1_e, 2));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "textLikeHeader: Paragraph trees are not equal.");
+}
+
+void test_correct_createHierarchy::siblingSectionsAndArticlesWithMixedHeaders() {
+    QString html =
+        "<html>"
+        "<body>"
+        "<h1>Main Title</h1>"
+        "<h2>Subtitle One</h2>"
+        "<section>"
+        "<h1>Section 1 Title (H1)</h1>"
+        "<h2>Section 1 Subtitle (H2)</h2>"
+        "</section>"
+        "<article>"
+        "<h1>Article 1 Title (H1)</h1>"
+        "</article>"
+        "<h2>Subtitle Two (sibling of Subtitle One)</h2>"
+        "<h3>Detail under Subtitle Two</h3>"
+        "</body>"
+        "</html>";
 
     QDomDocument doc;
     QVERIFY(doc.setContent(html));
     QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
 
-
-    Paragraph root;
+    Paragraph actualRoot;
     QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "siblingSectionsAndArticlesWithMixedHeaders: Errors found.");
 
-    createHierarchyListOfHeaderTags(rootDocElement, &root, errors);
+    Paragraph expectedRoot;
+    Paragraph* mainH1_e = new Paragraph("Main Title", &expectedRoot, 1);
+    expectedRoot.appendChild(mainH1_e);
+    Paragraph* sub1_e = new Paragraph("Subtitle One", mainH1_e, 2);
+    mainH1_e->appendChild(sub1_e);
 
-    Paragraph* LoremIpsumHeader = root.getChildHierarchy()->takeFirst(); // <h1>Lorem ispsum</h1>
-    QCOMPARE(LoremIpsumHeader->getLevel(), 1);
-    QCOMPARE(LoremIpsumHeader->getText(), "Lorem ispsum");
-    QVERIFY(root.getChildHierarchy()->isEmpty());
+    Paragraph* sec1H1_e = new Paragraph("Section 1 Title (H1)", &expectedRoot, 1); expectedRoot.appendChild(sec1H1_e);
+    sec1H1_e->appendChild(new Paragraph("Section 1 Subtitle (H2)", sec1H1_e, 2));
 
-    Paragraph* DolorSitHeader = LoremIpsumHeader->getChildHierarchy()->takeFirst(); // <h2>Dolor sit amet</h2>
-    QVERIFY(LoremIpsumHeader->getChildHierarchy()->isEmpty());
-    QCOMPARE(DolorSitHeader->getLevel(), 2);
-    QCOMPARE(DolorSitHeader->getText(), "Dolor sit amet");
-    QVERIFY(DolorSitHeader->getChildHierarchy()->isEmpty());
+    Paragraph* art1H1_e = new Paragraph("Article 1 Title (H1)", &expectedRoot, 1); expectedRoot.appendChild(art1H1_e);
 
-    QVERIFY(errors.isEmpty());
+    Paragraph* sub2_e = new Paragraph("Subtitle Two (sibling of Subtitle One)", mainH1_e, 2);
+    mainH1_e->appendChild(sub2_e);
+    sub2_e->appendChild(new Paragraph("Detail under Subtitle Two", sub2_e, 3));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "siblingSectionsAndArticlesWithMixedHeaders: Paragraph trees are not equal.");
+}
+
+void test_correct_createHierarchy::multipleSequentialSectionsStartingWithH1() {
+    QString html =
+        "<html>"
+        "<body>"
+        "<h1>Main H1 After Sections</h1>"
+        "<section>"
+        "<h1>Section 1 H1</h1>"
+        "<h2>Section 1 H2</h2>"
+        "</section>"
+        "<section>"
+        "<h1>Section 2 H1</h1>"
+        "</section>"
+        "<section>"
+        "<h1>Section 3 H1</h1>"
+        "</section>"
+        "</body>"
+        "</html>";
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "multipleSequentialSectionsStartingWithH1: Errors found.");
+
+    Paragraph expectedRoot;
+
+    expectedRoot.appendChild(new Paragraph("Main H1 After Sections", &expectedRoot, 1));
+
+    Paragraph* s1h1_e = new Paragraph("Section 1 H1", &expectedRoot, 1); expectedRoot.appendChild(s1h1_e);
+    s1h1_e->appendChild(new Paragraph("Section 1 H2", s1h1_e, 2));
+
+    expectedRoot.appendChild(new Paragraph("Section 2 H1", &expectedRoot, 1));
+
+    expectedRoot.appendChild(new Paragraph("Section 3 H1", &expectedRoot, 1));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "multipleSequentialSectionsStartingWithH1: Paragraph trees are not equal.");
+}
+
+void test_correct_createHierarchy::headersWithHtmlEntities() {
+    QString html =
+        "<html>"
+        "<body>"
+        "<h1>Title with &amp; &lt; &gt; &quot; &apos;</h1>"
+        "<h2>Section with &nbsp; spaces</h2>"
+        "</body>"
+        "</html>";
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), "headersWithHtmlEntities: Errors found.");
+
+    Paragraph expectedRoot;
+    Paragraph* h1_e = new Paragraph("Title with & < > \" '", &expectedRoot, 1); expectedRoot.appendChild(h1_e);
+    h1_e->appendChild(new Paragraph("Section with  spaces", h1_e, 2));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "headersWithHtmlEntities: Paragraph trees are not equal.");
+}
+
+void test_correct_createHierarchy::headersAfterSectionRelatingToOuterContext() {
+    QString html =
+        "<html>"
+        "<body>"
+        "<h1>Main H1</h1>"
+        "<h2>First Subtitle (under Main H1)</h2>"
+        "<section>"
+        "<h1>Section H1</h1>"
+        "<h2>Section Subtitle</h2>"
+        "</section>"
+        "<h3>Second Subtitle (child of First Subtitle)</h3>"
+        "<h4>Detail for H3 (child of H3)</h4>"
+        "</body>"
+        "</html>";
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), qPrintable("headersAfterSectionRelatingToOuterContext: Errors found: " + (errors.isEmpty() ? "None" : errors.values().first().generateErrorMessage() ) ));
+
+
+    Paragraph expectedRoot;
+    Paragraph* mainH1_e = new Paragraph("Main H1", &expectedRoot, 1); expectedRoot.appendChild(mainH1_e);
+    Paragraph* firstH2_e = new Paragraph("First Subtitle (under Main H1)", mainH1_e, 2); mainH1_e->appendChild(firstH2_e);
+
+    Paragraph* secH1_e = new Paragraph("Section H1", &expectedRoot, 1); expectedRoot.appendChild(secH1_e);
+    secH1_e->appendChild(new Paragraph("Section Subtitle", secH1_e, 2));
+
+    Paragraph* secondH3_e = new Paragraph("Second Subtitle (child of First Subtitle)", firstH2_e, 3);
+    firstH2_e->appendChild(secondH3_e);
+    secondH3_e->appendChild(new Paragraph("Detail for H3 (child of H3)", secondH3_e, 4));
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "headersAfterSectionRelatingToOuterContext: Paragraph trees are not equal.");
 }

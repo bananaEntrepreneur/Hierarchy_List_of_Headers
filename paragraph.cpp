@@ -39,11 +39,11 @@ void Paragraph::setLevel(int value) {
 
 // GET-методы
 
-QString Paragraph::getText() {
+QString Paragraph::getText() const {
     return this->text;
 }
 
-Paragraph* Paragraph::getParent() {
+Paragraph* Paragraph::getParent() const {
     return this->parent;
 }
 
@@ -51,7 +51,7 @@ QList<Paragraph*>* Paragraph::getChildHierarchy() {
     return &this->childHierarchy;
 }
 
-int Paragraph::getLevel() {
+int Paragraph::getLevel() const {
     return this->level;
 }
 

@@ -28,7 +28,7 @@ $: Hierarchy_List_of_Headers.exe input.html result.txt
 
 ## 📝 Пример
 
-###Входной HTML-файл
+### Входной HTML-файл
 - `<html>`
 - `<body>`
 - `<h1>`Lorem ispsum`</h1>`
@@ -41,7 +41,7 @@ $: Hierarchy_List_of_Headers.exe input.html result.txt
 - `</body>`
 - `</html>`
 
-###Иерархия заголовочных тегов
+### Иерархия заголовочных тегов
 - 1 Lorem ipsum
 - 1.1 Dolor sit amet
 - 1.2 Consectetur adipiscing elit

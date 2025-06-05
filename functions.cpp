@@ -239,7 +239,7 @@ QDomDocument createDomTreeFromFile(QString path, QSet<Error>& errors) {
     return domTree;
 }
 
-void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Error> errors) {
+void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Error>& errors) {
     QFile outputFile(path);
 
     if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {

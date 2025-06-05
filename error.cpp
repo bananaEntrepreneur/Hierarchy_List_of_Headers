@@ -88,7 +88,7 @@ QString Error::generateErrorMessage() const {
             return "Нет ошибки.";
 
         case ErrorType::fileError:
-            if (!errorInputPath.isEmpty() && errorAttrName == "input_non_existent") {
+            if (errorAttrName == "input_non_existent") {
                 return QString("Неверно указан файл с входными данными. Возможно, файл '%1' не существует.").arg(errorInputPath);
             }
             if (!errorInputPath.isEmpty() && errorAttrName == "input_no_access") {
