@@ -21,6 +21,7 @@ SOURCES += \
         functions.cpp \
         main.cpp \
         paragraph.cpp \
+        unit-tests/compareTrees.cpp \
         unit-tests/test_correct_createHierarchy.cpp \
         unit-tests/test_createDomTreeFromFile.cpp \
         unit-tests/test_findParent.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
     functions.h \
     main.h \
     paragraph.h \
+    unit-tests/compareTrees.h \
     unit-tests/test_correct_createHierarchy.h \
     unit-tests/test_createDomTreeFromFile.h \
     unit-tests/test_findParent.h \

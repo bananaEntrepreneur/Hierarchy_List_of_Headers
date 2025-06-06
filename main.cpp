@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     }
 
     // --- Тесты ---
-    //QTest::qExec(new test_correct_createHierarchy);
+    QTest::qExec(new test_correct_createHierarchy);
     //QTest::qExec(new test_incorrect_createHierarchy);
     //QTest::qExec(new test_toString);
     //QTest::qExec(new test_findParent);

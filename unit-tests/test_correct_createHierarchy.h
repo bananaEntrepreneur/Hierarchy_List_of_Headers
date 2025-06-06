@@ -4,6 +4,7 @@
 #include "../main.h"
 #include "../paragraph.h"
 #include "../functions.h"
+#include "compareTrees.h"
 
 /*!
  * \class test_correct_createHierarchy
@@ -23,15 +24,6 @@ public:
     explicit test_correct_createHierarchy(QObject *parent = nullptr);
 
     /*!
-     * \brief Рекурсивно сравнивает два узла Paragraph и их дочерние иерархии.
-     * \param actual Указатель на текущий узел в фактически построенном дереве.
-     * \param expected Указатель на текущий узел в ожидаемом дереве.
-     * \param path Строковый путь к текущему узлу для информативного вывода ошибок (например, "root->child[0]->child[1]").
-     * \return true, если поддеревья, начиная с этих узлов, идентичны, иначе false.
-     */
-    bool compareParagraphTreesRecursive(Paragraph* actual, Paragraph* expected, QString path = "root");
-
-    /*!
      * \brief Обертка для QVERIFY для сравнения двух деревьев Paragraph.
      * \param actual Указатель на корень фактически построенного дерева.
      * \param expected Указатель на корень ожидаемого дерева.
@@ -42,26 +34,37 @@ public:
 private slots:
     /*! \brief Тест базовой функциональности с простой иерархией. */
     void basicTest();
+
     /*! \brief Тест с несколькими дочерними элементами одного уровня под одним родителем. */
     void manyChildsWithSameLVL();
+
     /*! \brief Тест с полным набором тегов H1-H6. */
     void manyTagsWithVariousLVL();
+
     /*! \brief Тест обработки заголовков внутри тегов <section> и <article>. */
     void manyTagsInsideSectionAndArticle();
+
     /*! \brief Тест на игнорирование тегов, похожих на заголовки, но не являющихся ими (<hr>). */
     void headerLikeTags();
+
     /*! \brief Тест на игнорирование обычного текста (<p>) между заголовками. */
     void plaintTextBetweenHeaders();
+
     /*! \brief Тест на игнорирование текста, похожего на тег, внутри атрибута другого тега. */
     void textLikeHeaderInTagAttribute();
+
     /*! \brief Тест на игнорирование текста, который выглядит как заголовочный тег, но является просто текстом. */
     void textLikeHeader();
+
     /*! \brief Тест: Секции и статьи как прямые соседи с заголовками разного уровня. */
     void siblingSectionsAndArticlesWithMixedHeaders();
+
     /*! \brief Тест: Несколько секций подряд, каждая из которых начинается с H1. */
     void multipleSequentialSectionsStartingWithH1();
+
     /*! \brief Тест: Заголовки содержат сущности HTML (&amp;). */
     void headersWithHtmlEntities();
+
     /*! \brief Тест: Заголовки разных уровней после секции/статьи, относящиеся к предыдущему контексту. */
     void headersAfterSectionRelatingToOuterContext();
 };
