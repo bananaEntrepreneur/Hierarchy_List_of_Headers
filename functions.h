@@ -66,5 +66,11 @@ int getHeaderLevel(const QDomElement& element);
  */
 bool hasNonTextChildElements(const QDomElement& element);
 
+/*!
+ * \brief Распечатывает ошибки в файл. Если файла не удаётся открыть, то выводит ошибки в консоль.
+ * \param [in] path Путь до файла
+ * \param [in] errors Список с ошибками
+ */
+void printErrors (QString path, QSet<Error>& errors);
 
 #endif // FUNCTIONS_H

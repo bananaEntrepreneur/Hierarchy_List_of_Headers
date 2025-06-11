@@ -1,6 +1,6 @@
 #include "functions.h"
 
-// Глобальный флаг: найден ли заголовочный тег (h1-h6) в документе?
+//! \brief Флаг, указывающий, был ли найден хотя бы один заголовочный тег (h1-h6) в документе.
 static bool isAnyHeaderTagFoundInCurrentDocumentGlobal = false;
 
 void createHierarchyListOfHeaderTags(QDomElement& domTreeRoot, Paragraph* currentHierarchyNode, QSet<Error>& errors) {
@@ -189,53 +189,52 @@ Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel)
 }
 
 QDomDocument createDomTreeFromFile(QString path, QSet<Error>& errors) {
-    QFile inputFile(path);
-
-    if (!inputFile.open(QIODevice::ReadOnly)) {
-        Error fileError;
-        fileError.setType(ErrorType::fileError);
-        fileError.setErrorInputPath(path);
-        fileError.setErrorAttrName("input_non_existent");
-        errors.insert(fileError);
-    }
-
+    // Создаем объект для работы с файлом
+    QFile file(path);
+    // Создаем пустой DOM-документ
     QDomDocument domTree;
-    QString errorMessage;
-    int errorLine, errorColumn;
 
-    if (inputFile.isOpen()) {
-        if (!domTree.setContent(&inputFile, &errorMessage, &errorLine, &errorColumn)) {
-            Error parseError;
-            parseError.setType(ErrorType::XMLerror);
-            parseError.setErrorInputPath(path);
-            parseError.setErrorAttrName("xml_parse_error: " + errorMessage);
-            errors.insert(parseError);
-        }
-        inputFile.close();
-
-        QDomElement docElem = domTree.documentElement();
-        QDomElement bodyElement;
-
-        if (!docElem.isNull())
-            bodyElement = docElem.firstChildElement("body");
-
-        QDomElement scriptElement = bodyElement.firstChildElement("script");
-
-        if (bodyElement.isNull()) {
-            Error noBodyError;
-            noBodyError.setType(ErrorType::noTagError);
-            noBodyError.setErrorTagName("body");
-            noBodyError.setErrorAttrName("not_found");
-            errors.insert(noBodyError);
-        }
-        if (!scriptElement.isNull()) {
-            Error scriptError;
-            scriptError.setType(ErrorType::htmlStructureError);
-            scriptError.setErrorTagName("script");
-            errors.insert(scriptError);
-        }
+    // Пытаемся открыть файл только для чтения в текстовом режиме
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        // Если файл не удалось открыть, создаем и добавляем ошибку
+        Error fileOpenError;
+        fileOpenError.setType(ErrorType::fileError);
+        fileOpenError.setErrorInputPath(path);
+        fileOpenError.setErrorAttrName("input_cannot_open");
+        errors.insert(fileOpenError);
+        return domTree; // Возвращаем пустой документ
     }
 
+    // Читаем все содержимое файла
+    QString fileContent = file.readAll();
+    file.close(); // Закрываем файл после чтения
+
+    // Проверяем наличие <script> тегов.
+    if (fileContent.contains("</script>", Qt::CaseInsensitive)) {
+        Error scriptError;
+        scriptError.setType(ErrorType::htmlStructureError);
+        scriptError.setErrorTagName("script");
+        scriptError.setErrorAttrName("ignored_content"); // Указываем, что контент игнорируется
+        errors.insert(scriptError);
+    }
+
+    // Строим DOM-дерево
+    QString errorMsg;
+    int errorLine, errorColumn;
+    if (!domTree.setContent(fileContent, &errorMsg, &errorLine, &errorColumn)) {
+        // Если парсинг не удался, создаем и добавляем ошибку парсинга
+        Error xmlError;
+        xmlError.setType(ErrorType::XMLerror);
+        xmlError.setErrorTagName("XML/HTML");
+        // В атрибут записываем детальное сообщение об ошибке от парсера
+        xmlError.setErrorAttrName(QString("xml_parse_error: %1 at line %2, column %3")
+                                      .arg(errorMsg)
+                                      .arg(errorLine)
+                                      .arg(errorColumn));
+        errors.insert(xmlError);
+    }
+
+    // Возвращаем созданный DOM-документ (может быть пустым в случае ошибки)
     return domTree;
 }
 
@@ -278,4 +277,23 @@ bool hasNonTextChildElements(const QDomElement& element) {
         child = child.nextSibling();
     }
     return false;
+}
+
+void printErrors (QString path, QSet<Error>& errors) {
+    QFile outputFile(path);
+    if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&outputFile);
+        out.setCodec("UTF-8");
+        for(const Error& err : qAsConst(errors)) {
+            QString msg = err.generateErrorMessage();
+            qDebug().noquote() << msg;
+            out << msg;
+        }
+        outputFile.close();
+    } else {
+        for(const Error& err : qAsConst(errors)) {
+            QString msg = err.generateErrorMessage();
+            qDebug().noquote() << msg;
+        }
+    }
 }

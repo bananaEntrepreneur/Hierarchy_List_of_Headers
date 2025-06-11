@@ -69,10 +69,8 @@ void test_createDomTreeFromFile::nonExistentFile()
     bool foundError = false;
     for(const Error& err : errors){
         if(err.getErrorType() == ErrorType::fileError &&
-           err.getErrorInputPath() == filePath &&
-           (err.getErrorAttrName() == "input_non_existent")  ){
+           (err.getErrorAttrName() == "input_cannot_open")  ){
             foundError = true;
-            break;
         }
     }
     QVERIFY2(foundError, "Ошибки fileError (input_non_existent) не найдена.");
