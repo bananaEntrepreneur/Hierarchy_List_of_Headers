@@ -2,6 +2,11 @@ QT -= gui
 QT += xml
 QT += testlib
 
+CONFIG += debug
+QMAKE_CXXFLAGS += -g
+QMAKE_CXXFLAGS += -O0
+CONFIG += no_optimize
+
 CONFIG += c++11 console
 CONFIG -= app_bundle
 

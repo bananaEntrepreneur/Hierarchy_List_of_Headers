@@ -55,41 +55,47 @@ int Paragraph::getLevel() const {
     return this->level;
 }
 
-QString Paragraph::toString(QString separator) {
-    QString result;
-    QVector<int> numeration;
-
-    if (this->level == 0) { // Если вызывается от root
-        for (int i = 0; i < childHierarchy.size(); ++i) {
-            numeration.clear();
-            numeration.append(i + 1); // верхний уровень
-            result += childHierarchy[i]->getString(separator, numeration);
-        }
-    } else { // Если вызывается от любого другого параграфа
-        numeration.append(1);
-        result = this->getString(separator, numeration);
-    }
-
-    return result;
-}
-
-QString Paragraph::getString(QString separator, QVector<int>& currentNumeration) {
-    QString resultString;
-
-    // Формируем строку с текущей нумерацией
+void Paragraph::getString(QTextStream& stream, const QString& separator, QVector<int>& currentNumeration) {
+    // 1. Собрать префикс нумерации для текущего узла
     QStringList numerationStrings;
     for (int num : currentNumeration) {
         numerationStrings << QString::number(num);
     }
 
-    if (!numerationStrings.isEmpty()) {
-        resultString += numerationStrings.join(separator) + " " + this->text + "\n";
-    }
+    // 2. Сформировать и записать полную строку для текущего узла в поток
+    stream << numerationStrings.join(separator)
+           << " "
+           << this->text
+           << "\n";
 
+    // 3. Рекурсивно обработать всех детей
     for (int i = 0; i < childHierarchy.size(); ++i) {
-        currentNumeration.append(i + 1); // Переход к дочернему уровню
-        resultString += childHierarchy[i]->getString(separator, currentNumeration);
-        currentNumeration.removeLast(); // Откат к текущему уровню
+        Paragraph* child = childHierarchy.at(i);
+        currentNumeration.append(i + 1); // Добавляем номер ребенка к пути
+        child->getString(stream, separator, currentNumeration);
+        currentNumeration.removeLast(); // Убираем нумерацию ребенка для обработки следующего соседа
+    }
+}
+
+QString Paragraph::toString(QString separator) {
+    QString resultString;
+    QTextStream stream(&resultString); // Связываем поток со строкой результата
+
+    if (this->level == 0) { // Для корневого пункта иерархии
+        // Проходим по всем прямым потомкам корневого узла
+        for (int i = 0; i < childHierarchy.size(); ++i) {
+            Paragraph* child = childHierarchy.at(i);
+            // Для каждого ребенка верхнего уровня создается свой вектор нумерации.
+            QVector<int> numerationForChild;
+            numerationForChild.append(i + 1);
+
+            // Запускаем рекурсивный процесс для дочернего узла.
+            child->getString(stream, separator, numerationForChild);
+        }
+    } else { // Для остальных пунктов иерархии
+        QVector<int> localNumeration;
+        localNumeration.append(1);
+        this->getString(stream, separator, localNumeration);
     }
 
     return resultString;
