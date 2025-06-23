@@ -88,14 +88,11 @@ QString Error::generateErrorMessage() const {
             return "Нет ошибки.";
 
         case ErrorType::fileError:
-            if (errorAttrName == "input_non_existent") {
-                return QString("Неверно указан файл с входными данными. Возможно, файл '%1' не существует.").arg(errorInputPath);
+            if (errorAttrName == "input_cannot_open") {
+                return QString("Ошибка. Не удалось открыть входной файл. Возможно, файл '%1' не существует.").arg(errorInputPath);
             }
-            if (!errorInputPath.isEmpty() && errorAttrName == "input_no_access") {
-                 return QString("Неверно указан файл с входными данными. Нет доступа к указанному файлу '%1'.").arg(errorInputPath);
-            }
-            if (!errorOutputPath.isEmpty() && errorAttrName == "output_cannot_create") {
-                 return QString("Неверно указан файл для выходных данных. Возможно указанного расположения '%1' не существует или нет прав на запись.").arg(errorOutputPath);
+            if (errorAttrName == "output_cannot_create"){
+                return QString("Ошибка. Не удалось открыть выходной файл.");
             }
             if (errorTagName.toLower() == "script" && errorAttrName == "ignored_content") {
                 return "Ошибка. Содержимое тега <script> не учитывается.";

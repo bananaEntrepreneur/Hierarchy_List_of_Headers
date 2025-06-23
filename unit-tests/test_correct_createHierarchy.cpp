@@ -418,3 +418,132 @@ void test_correct_createHierarchy::headersAfterSectionRelatingToOuterContext() {
 
     QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "headersAfterSectionRelatingToOuterContext: Paragraph trees are not equal.");
 }
+
+void test_correct_createHierarchy::complexTest() {
+    QString html =
+        "<html>"
+        "<body>"
+            "<h1>Lorem ipsum</h1>"
+                "<h2>dolor sit amet</h2>"
+                    "<h3>consectetur adipiscing elit</h3>"
+                        "<h4>sed do eiusmod</h4>"
+                    "<h3>tempor incididunt</h3>"
+                "<h2>ut labore</h2>"
+                    "<h3>et dolore</h3>"
+                        "<h4>magna aliqua</h4>"
+                            "<h5>Ut enim</h5>"
+                                "<h6>ad minim</h6>"
+        "<section>"
+        "<h1>Lorem ipsum</h1>"
+            "<h2>dolor sit amet</h2>"
+                "<h3>consectetur adipiscing elit</h3>"
+                    "<h4>sed do eiusmod</h4>"
+                "<h3>tempor incididunt</h3>"
+            "<h2>ut labore</h2>"
+                "<h3>et dolore</h3>"
+                    "<h4>magna aliqua</h4>"
+                        "<h5>Ut enim</h5>"
+                            "<h6>ad minim</h6>"
+        "</section>"
+        "<article>"
+        "<h1>Lorem ipsum</h1>"
+            "<h2>dolor sit amet</h2>"
+                "<h3>consectetur adipiscing elit</h3>"
+                    "<h4>sed do eiusmod</h4>"
+                "<h3>tempor incididunt</h3>"
+            "<h2>ut labore</h2>"
+                "<h3>et dolore</h3>"
+                    "<h4>magna aliqua</h4>"
+                        "<h5>Ut enim</h5>"
+                            "<h6>ad minim</h6>"
+        "</article>"
+                            "<h5>quis nostrud</h5>"
+                        "<h4>exercitation ullamco</h4>"
+        "</body>"
+        "</html>";
+
+    QDomDocument doc;
+    QVERIFY(doc.setContent(html));
+    QDomElement rootDocElement = doc.documentElement().firstChildElement("body");
+
+    Paragraph actualRoot;
+    QSet<Error> errors;
+    createHierarchyListOfHeaderTags(rootDocElement, &actualRoot, errors);
+    QVERIFY2(errors.isEmpty(), qPrintable("complexTest: Errors: " + (errors.isEmpty() ? "None" : errors.values().first().generateErrorMessage() ) ));
+
+    Paragraph expectedRoot;
+
+    // Первый блок H1
+    Paragraph* h1_1 = new Paragraph("Lorem ipsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_1);
+
+    Paragraph* h2_1 = new Paragraph("dolor sit amet", h1_1, 2);
+    h1_1->appendChild(h2_1);
+    Paragraph* h3_1 = new Paragraph("consectetur adipiscing elit", h2_1, 3);
+    h2_1->appendChild(h3_1);
+    Paragraph* h4_1 = new Paragraph("sed do eiusmod", h3_1, 4);
+    h3_1->appendChild(h4_1);
+    Paragraph* h3_2 = new Paragraph("tempor incididunt", h2_1, 3);
+    h2_1->appendChild(h3_2);
+
+    Paragraph* h2_2 = new Paragraph("ut labore", h1_1, 2);
+    h1_1->appendChild(h2_2);
+    Paragraph* h3_3 = new Paragraph("et dolore", h2_2, 3);
+    h2_2->appendChild(h3_3);
+    Paragraph* h4_2 = new Paragraph("magna aliqua", h3_3, 4);
+    h3_3->appendChild(h4_2);
+    Paragraph* h5_1 = new Paragraph("Ut enim", h4_2, 5);
+    h4_2->appendChild(h5_1);
+    Paragraph* h6_1 = new Paragraph("ad minim", h5_1, 6);
+    h5_1->appendChild(h6_1);
+    Paragraph* h5_2 = new Paragraph("quis nostrud", h4_2, 5);
+    h4_2->appendChild(h5_2);
+    Paragraph* h4_3 = new Paragraph("exercitation ullamco", h3_3, 4);
+    h3_3->appendChild(h4_3);
+
+    // section
+    Paragraph* h1_2 = new Paragraph("Lorem ipsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_2);
+    Paragraph* h2_3 = new Paragraph("dolor sit amet", h1_2, 2);
+    h1_2->appendChild(h2_3);
+    Paragraph* h3_4 = new Paragraph("consectetur adipiscing elit", h2_3, 3);
+    h2_3->appendChild(h3_4);
+    Paragraph* h4_4 = new Paragraph("sed do eiusmod", h3_4, 4);
+    h3_4->appendChild(h4_4);
+    Paragraph* h3_5 = new Paragraph("tempor incididunt", h2_3, 3);
+    h2_3->appendChild(h3_5);
+    Paragraph* h2_4 = new Paragraph("ut labore", h1_2, 2);
+    h1_2->appendChild(h2_4);
+    Paragraph* h3_6 = new Paragraph("et dolore", h2_4, 3);
+    h2_4->appendChild(h3_6);
+    Paragraph* h4_5 = new Paragraph("magna aliqua", h3_6, 4);
+    h3_6->appendChild(h4_5);
+    Paragraph* h5_3 = new Paragraph("Ut enim", h4_5, 5);
+    h4_5->appendChild(h5_3);
+    Paragraph* h6_2 = new Paragraph("ad minim", h5_3, 6);
+    h5_3->appendChild(h6_2);
+
+    // article
+    Paragraph* h1_3 = new Paragraph("Lorem ipsum", &expectedRoot, 1);
+    expectedRoot.appendChild(h1_3);
+    Paragraph* h2_5 = new Paragraph("dolor sit amet", h1_3, 2);
+    h1_3->appendChild(h2_5);
+    Paragraph* h3_7 = new Paragraph("consectetur adipiscing elit", h2_5, 3);
+    h2_5->appendChild(h3_7);
+    Paragraph* h4_6 = new Paragraph("sed do eiusmod", h3_7, 4);
+    h3_7->appendChild(h4_6);
+    Paragraph* h3_8 = new Paragraph("tempor incididunt", h2_5, 3);
+    h2_5->appendChild(h3_8);
+    Paragraph* h2_6 = new Paragraph("ut labore", h1_3, 2);
+    h1_3->appendChild(h2_6);
+    Paragraph* h3_9 = new Paragraph("et dolore", h2_6, 3);
+    h2_6->appendChild(h3_9);
+    Paragraph* h4_7 = new Paragraph("magna aliqua", h3_9, 4);
+    h3_9->appendChild(h4_7);
+    Paragraph* h5_4 = new Paragraph("Ut enim", h4_7, 5);
+    h4_7->appendChild(h5_4);
+    Paragraph* h6_3 = new Paragraph("ad minim", h5_4, 6);
+    h5_4->appendChild(h6_3);
+
+    QVERIFY_TREES_EQUAL(&actualRoot, &expectedRoot, "complexTest: Paragraph trees are not equal.");
+}

@@ -3,6 +3,38 @@
 
 #include "main.h"
 
+/*! \mainpage Программа для автоматической генерации иерархического оглавления HTML-страницы на основе заголовочных тегов.
+ *
+ * Запуск программы <br/>
+ * $: Hierarchy_List_of_Headers.exe input.html result.txt
+ *
+ * Пример: <br/>
+ *
+ * Входной HTML-файл <br/>
+ * `<html>` <br/>
+ * `<body>` <br/>
+ * `<h1>`Lorem ispsum`</h1>` <br/>
+ * `<h2>`Dolor sit amet`</h2>` <br/>
+ * `<h2>`Consectetur adipiscing elit`</h2>` <br/>
+ * `<h3>`Tempor incididunt`</h3>` <br/>
+ * `<h2>`Ut labore et dolore`</h2>` <br/>
+ * `<h3>`Et dolore magna`</h3>` <br/>
+ * `<h4>`Ut enim ad minim`</h4>` <br/>
+ * `</body>` <br/>
+ * `</html>` <br/>
+ *
+ * Иерархия заголовочных тегов <br/>
+ * 1 Lorem ipsum <br/>
+ * 1.1 Dolor sit amet <br/>
+ * 1.2 Consectetur adipiscing elit <br/>
+ * 1.2.1 Tempor incididunt <br/>
+ * 1.3 Ut labore et dolore <br/>
+ * 1.3.1 Et dolore magna <br/>
+ * 1.3.1.1 Ut enim ad minim <br/>
+ *
+ * Тесты запускаются ручным вводом test в качестве первого аргумента и вторым аргументом файл для записи тестов.
+ */
+
 /*!
  * \file paragraph.h
  * \class Paragraph

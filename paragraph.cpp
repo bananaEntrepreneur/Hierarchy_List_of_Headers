@@ -1,23 +1,13 @@
 #include "paragraph.h"
 
-Paragraph::Paragraph() {
-    text = "root";
-    parent = nullptr;
-    level = 0;
-}
+Paragraph::Paragraph()
+    : text("root"), level(0), parent(nullptr)  {}
 
-Paragraph::Paragraph(QString iText, Paragraph* iParent, int iLevel) {
-    text = iText;
-    parent = iParent;
-    level = iLevel;
-}
+Paragraph::Paragraph(QString iText, Paragraph* iParent, int iLevel)
+    : text(iText), level(iLevel), parent(iParent) {}
 
-Paragraph::Paragraph(QString iText, Paragraph* iParent, QList<Paragraph*> iChildHierarchy, int iLevel) {
-    text = iText;
-    parent = iParent;
-    childHierarchy = iChildHierarchy;
-    level = iLevel;
-}
+Paragraph::Paragraph(QString iText, Paragraph* iParent, QList<Paragraph*> iChildHierarchy, int iLevel)
+    : text(iText), level(iLevel), parent(iParent), childHierarchy(iChildHierarchy) {}
 
 // SET-методы
 

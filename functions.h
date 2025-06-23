@@ -22,9 +22,27 @@
 void createHierarchyListOfHeaderTags(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
 
 
-void createHierarchyRecursive(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
+/*!
+    \brief Обрабатывает заголовочный тег (h1–h6) и создает соответствующий пункт иерархии.
 
+    Выполняет проверку структуры документа, включая:
+    - правильность первого заголовка (h1),
+    - отсутствие дублирующихся заголовков h1,
+    - корректную иерархию уровней (например, запрет h1 → h3),
+    - отсутствие вложенного HTML в заголовке,
+    - непустое текстовое содержимое.
 
+    При необходимости добавляет соответствующие ошибки в набор errors.
+
+    \param headerElement DOM-элемент заголовочного тега (например, h2).
+    \param contextNode Последний успешно добавленный параграф — используется для поиска родителя.
+    \param errors Контейнер для накопления обнаруженных ошибок структуры.
+    \param previousHeaderLevel Уровень предыдущего заголовка (для проверки иерархии).
+    \param h1FoundInScope Флаг, указывающий, был ли уже найден заголовок h1 в текущем контексте (body/section/article).
+    \param firstHeaderProcessed Флаг, был ли уже обработан первый заголовок в текущем контексте.
+
+    \return Указатель на созданный объект Paragraph, либо nullptr, если добавление не выполнено из-за ошибки.
+*/
 Paragraph* handleHeader(
     QDomElement& headerElement,
     Paragraph* contextNode,
@@ -33,9 +51,25 @@ Paragraph* handleHeader(
     bool& h1FoundInScope,
     bool& firstHeaderProcessed);
 
+/*!
+    \brief Рекурсивно обходит DOM-дерево и создает иерархию заголовков.
+
+    Функция обрабатывает заголовки h1–h6, а также структуры section и article,
+    создавая иерархию узлов Paragraph на основе их уровней вложенности.
+    Также фиксирует структурные ошибки, включая:
+    - неправильную вложенность разделов,
+    - пропуски уровней заголовков,
+    - повторные h1 внутри одной области.
+
+    \param domNode Узел DOM-дерева, откуда начинается обход (например, body или section).
+    \param currentParagraph Указатель на текущий пункт иерархии Paragraph, к которому будут добавлены найденные заголовки.
+    \param errors Контейнер, в который будут записаны найденные ошибки.
+*/
+void createHierarchyRecursive(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
+
 
 /*!
- * \brief Осуществляет поиск родительского узла для нового пункта в иерархии.
+ * \brief Поиск родительского пункта для нового пункта в иерархии.
  * Определяет, куда встроить новый заголовок на основе уровня предыдущего добавленного пункта и уровня текущего пункта.
  * \param[in] previous Указатель на последний добавленный пункт в иерархию Paragraph.
  * \param[in] currentLevel Уровень текущего пункта (заголовка), для которого ищется родитель.
@@ -65,7 +99,7 @@ void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Er
 
 /*!
  * \brief Определяет числовой уровень заголовочного тега (H1=1, H2=2, ...).
- * Также обрабатывает теги <section> и <article> как уровень 1 для контекста иерархии.
+ * Также обрабатывает теги section и article как уровень 1 для контекста иерархии.
  * \param[in] element Ссылка на элемент DOM-дерева.
  * \return Числовой уровень заголовка. 0, если элемент не является валидным тегом заголовка (H1-H6) или структурным элементом section/article.
  */
@@ -77,7 +111,7 @@ int getHeaderLevel(const QDomElement& element);
  * \param[in] element Элемент DOM для проверки.
  * \return true, если элемент содержит хотя бы один дочерний элемент-тег, иначе false.
  */
-bool hasNonTextChildElements(const QDomElement& element);
+bool hasChildElements(const QDomElement& element);
 
 /*!
  * \brief Распечатывает ошибки в файл. Если файла не удаётся открыть, то выводит ошибки в консоль.

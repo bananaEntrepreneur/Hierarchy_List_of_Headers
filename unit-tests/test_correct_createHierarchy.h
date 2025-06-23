@@ -67,6 +67,9 @@ private slots:
 
     /*! \brief Тест: Заголовки разных уровней после секции/статьи, относящиеся к предыдущему контексту. */
     void headersAfterSectionRelatingToOuterContext();
+
+    //! \brief Комплексный тест
+    void complexTest();
 };
 
 #endif // TEST_CORRECT_CREATEHIERARCHY_H

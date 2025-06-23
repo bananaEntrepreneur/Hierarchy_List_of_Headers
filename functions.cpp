@@ -1,5 +1,44 @@
 #include "functions.h"
 
+void createHierarchyListOfHeaderTags(QDomElement& bodyElement, Paragraph* root, QSet<Error>& errors) {
+    // 1. Проверка заголовков вне body
+    QDomElement htmlElement = bodyElement.parentNode().toElement();
+    if (!htmlElement.isNull() && htmlElement.tagName().toLower() == "html") {
+        QDomElement headElement = htmlElement.firstChildElement("head");
+        if (!headElement.isNull()) {
+            for (int i = 1; i <= 6; ++i) {
+                QString tagName = "h" + QString::number(i);
+                if (headElement.elementsByTagName(tagName).count() > 0) {
+                    Error outsideError;
+                    outsideError.setType(ErrorType::htmlStructureError);
+                    outsideError.setErrorTagName(tagName);
+                    outsideError.setErrorAttrName("outside_body");
+                    errors.insert(outsideError);
+                }
+            }
+        }
+    }
+
+    // 2. Рекурсивное построение иерархии заголовочных тегов начиная с <body>
+    createHierarchyRecursive(bodyElement, root, errors);
+
+    // 3. Были ли найдены заголовки во всем документе.
+    if (root->getChildHierarchy()->isEmpty()) {
+        bool noHeaderErrorExists = false;
+        for (const Error& err : qAsConst(errors)) {
+            if (err.getErrorType() == ErrorType::noHeaderTagsError) {
+                noHeaderErrorExists = true;
+            }
+        }
+        // Добавляем ошибку, только если она еще не была добавлена
+        if (!noHeaderErrorExists) {
+            Error noHeader;
+            noHeader.setType(ErrorType::noHeaderTagsError);
+            errors.insert(noHeader);
+        }
+    }
+}
+
 Paragraph* handleHeader(
     QDomElement& headerElement,
     Paragraph* contextNode,
@@ -12,7 +51,7 @@ Paragraph* handleHeader(
     QString parentScopeName = headerElement.parentNode().toElement().tagName().toLower();
     int headerLevel = getHeaderLevel(headerElement);
 
-    // Ошибка: Первый заголовок в body/section/article не <h1>
+    // Ошибка: Первый заголовок в body/section/article не h1
     if (!firstHeaderProcessed) {
         if (headerLevel != 1) {
             Error firstHeaderError;
@@ -24,7 +63,7 @@ Paragraph* handleHeader(
         firstHeaderProcessed = true;
     }
 
-    // Ошибка: Больше одного <h1> в текущем контексте
+    // Ошибка: Больше одного h1 в текущем контексте
     if (headerLevel == 1) {
         if (h1FoundInScope) {
             Error tooManyH1Error;
@@ -58,7 +97,7 @@ Paragraph* handleHeader(
     }
 
     // Ошибка: Содержимое заголовочного тега не текст
-    if (hasNonTextChildElements(headerElement)) {
+    if (hasChildElements(headerElement)) {
         Error contentError;
         contentError.setType(ErrorType::tagError);
         contentError.setErrorTagName(tagName);
@@ -123,48 +162,7 @@ void createHierarchyRecursive(QDomElement& domNode, Paragraph* currentParagraph,
     }
 }
 
-void createHierarchyListOfHeaderTags(QDomElement& bodyElement, Paragraph* root, QSet<Error>& errors) {
-    // 1. Проверка заголовков вне <body>
-    QDomElement htmlElement = bodyElement.parentNode().toElement();
-    if (!htmlElement.isNull() && htmlElement.tagName().toLower() == "html") {
-        QDomElement headElement = htmlElement.firstChildElement("head");
-        if (!headElement.isNull()) {
-            for (int i = 1; i <= 6; ++i) {
-                QString tagName = "h" + QString::number(i);
-                if (headElement.elementsByTagName(tagName).count() > 0) {
-                    Error outsideError;
-                    outsideError.setType(ErrorType::htmlStructureError);
-                    outsideError.setErrorTagName(tagName);
-                    outsideError.setErrorAttrName("outside_body");
-                    errors.insert(outsideError);
-                }
-            }
-        }
-    }
-
-    // 2. Рекурсивное построение иерархии заголовочных тегов начиная с <body>
-    createHierarchyRecursive(bodyElement, root, errors);
-
-    // 3. Были ли найдены заголовки во всем документе.
-    if (root->getChildHierarchy()->isEmpty()) {
-        bool noHeaderErrorExists = false;
-        for (const Error& err : qAsConst(errors)) {
-            if (err.getErrorType() == ErrorType::noHeaderTagsError) {
-                noHeaderErrorExists = true;
-                break;
-            }
-        }
-        // Добавляем ошибку, только если она еще не была добавлена
-        if (!noHeaderErrorExists) {
-            Error noHeader;
-            noHeader.setType(ErrorType::noHeaderTagsError);
-            errors.insert(noHeader);
-        }
-    }
-}
-
 Paragraph* findParentForParagraph(Paragraph* previous, int currentLevel) {
-
     if (!previous)
         return nullptr;
 
@@ -246,15 +244,22 @@ QDomDocument createDomTreeFromFile(QString path, QSet<Error>& errors) {
 }
 
 void printHierarchyListOfHeaderTagsToFile(QString path, Paragraph* root, QSet<Error>& errors) {
-    QFile outputFile(path);
+    QFile outputFile(path); // Создаем объект файла
 
+    // Открываем файл для записи в текстовом режиме
     if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        // Получаем строковое представление иерархии с разделителем "."
         QString textImplementationOfHierarchy = root->toString(".");
+
+        // Поток для записи в файл с указанием кодировки UTF-8
         QTextStream out(&outputFile);
         out.setCodec("UTF-8");
+
+        // Записываем результат и закрываем файл
         out << textImplementationOfHierarchy;
         outputFile.close();
     } else {
+        // Если файл не открылся — добавляем ошибку
         Error outputError;
         outputError.setType(ErrorType::fileError);
         outputError.setErrorOutputPath(path);
@@ -275,29 +280,36 @@ int getHeaderLevel(const QDomElement& element) {
     return 0; // Не заголовок h1-h6
 }
 
-bool hasNonTextChildElements(const QDomElement& element) {
-    QDomNode child = element.firstChild();
-    while (!child.isNull()) {
-        if (child.isElement()) {
+bool hasChildElements(const QDomElement& element) {
+    QDomNode child = element.firstChild(); // Получаем первый дочерний узел
+
+    while (!child.isNull()) { // Пока есть дочерние узлы
+        if (child.isElement()) { // Если это DOM-элемент (а не текст или комментарий)
             return true; // Есть вложенный тег
         }
-        child = child.nextSibling();
+        child = child.nextSibling(); // Переход к следующему дочернему узлу
     }
     return false;
 }
 
 void printErrors (QString path, QSet<Error>& errors) {
-    QFile outputFile(path);
+    QFile outputFile(path); // Создаём объект файла
+
+    // Открываем файл для записи
     if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&outputFile);
-        out.setCodec("UTF-8");
+        QTextStream out(&outputFile); // Поток для записи текста в файл
+        out.setCodec("UTF-8"); // Устанавливаем кодировку UTF-8 для корректного вывода
+
+        // Для каждой ошибки
         for(const Error& err : qAsConst(errors)) {
-            QString msg = err.generateErrorMessage();
-            qDebug().noquote() << msg;
-            out << msg;
+            QString msg = err.generateErrorMessage(); // Формируем текст сообщения об ошибке
+            qDebug().noquote() << msg; // Выводим в консоль
+            out << msg; // Выводим в файл
         }
-        outputFile.close();
+
+        outputFile.close(); // Закрываем файл после записи
     } else {
+        // Если файл не открылся, выводим ошибки только в консоль
         for(const Error& err : qAsConst(errors)) {
             QString msg = err.generateErrorMessage();
             qDebug().noquote() << msg;
