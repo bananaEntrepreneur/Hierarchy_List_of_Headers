@@ -1,12 +1,12 @@
 #include "error.h"
 
-Error::Error() {
-    type = noError;
-    errorTagName = " ";
-    errorAttrName = " ";
-    errorInputPath = " ";
-    errorOutputPath = " ";
-}
+Error::Error()
+    : type(noError),
+      errorTagName(" "),
+      errorAttrName(" "),
+      errorInputPath(" "),
+      errorOutputPath(" ") {}
+
 
 bool Error::operator>(const Error& other) const {
     return std::tie(type, errorTagName, errorAttrName, errorInputPath, errorInputPath)

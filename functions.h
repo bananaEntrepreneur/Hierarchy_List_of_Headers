@@ -21,6 +21,19 @@
  */
 void createHierarchyListOfHeaderTags(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
 
+
+void createHierarchyRecursive(QDomElement& domNode, Paragraph* currentParagraph, QSet<Error>& errors);
+
+
+Paragraph* handleHeader(
+    QDomElement& headerElement,
+    Paragraph* contextNode,
+    QSet<Error>& errors,
+    int& previousHeaderLevel,
+    bool& h1FoundInScope,
+    bool& firstHeaderProcessed);
+
+
 /*!
  * \brief Осуществляет поиск родительского узла для нового пункта в иерархии.
  * Определяет, куда встроить новый заголовок на основе уровня предыдущего добавленного пункта и уровня текущего пункта.

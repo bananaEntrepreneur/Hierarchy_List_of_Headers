@@ -87,8 +87,6 @@ void test_incorrect_createHierarchy::headerOutsideBody() {
     if (!headElement.isNull()) {
          createHierarchyListOfHeaderTags(headElement, &mainRoot, bodyErrors);
     }
-    // Затем обрабатываем body (хотя ошибка из head уже должна быть)
-    //createHierarchyListOfHeaderTags(bodyElement, &mainRoot, bodyErrors);
 
     QVERIFY2(!bodyErrors.isEmpty(), "Ошибка заголовочного тега вне <body> не найдена!");
     if (bodyErrors.isEmpty()) return;

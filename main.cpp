@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     else {
-        qInfo() << QString("Иерархия успешно сформирована и записана в файл: %1").arg(argv[1]);
+        qInfo() << QString("Иерархия успешно сформирована и записана в файл: %1").arg(argv[2]);
         return 0;
     }
 }

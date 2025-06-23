@@ -63,10 +63,7 @@ void Paragraph::getString(QTextStream& stream, const QString& separator, QVector
     }
 
     // 2. Сформировать и записать полную строку для текущего узла в поток
-    stream << numerationStrings.join(separator)
-           << " "
-           << this->text
-           << "\n";
+    stream << numerationStrings.join(separator) << " " << this->text << "\n";
 
     // 3. Рекурсивно обработать всех детей
     for (int i = 0; i < childHierarchy.size(); ++i) {
